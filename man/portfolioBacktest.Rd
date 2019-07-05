@@ -17,7 +17,7 @@ a dataset containing a list of \code{xts} objects (following the format of each
 element of the argument \code{dataset_list}) properly windowed (following the
 rolling-window approach) and returning the portfolio as a vector of normalized
 weights. See 
-\href{https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html}{vignette}
+\href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{vignette}
 for details.}
 
 \item{dataset_list}{List of datasets, each containing a list of \code{xts} objects, as generated
@@ -25,7 +25,7 @@ by the function \code{\link{stockDataResample}}.}
 
 \item{folder_path}{If \code{portfolio_funs} is not defined, this should contain the path to a folder 
 containing the portfolio functions saved in files. See 
-\href{https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html}{vignette}
+\href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{vignette}
 for details.}
 
 \item{price_name}{Name of the \code{xts} column in each dataset that contains the prices to be used in the portfolio return 
@@ -62,9 +62,9 @@ computation (default is \code{"adjusted"}).}
 }
 \value{
 List with the portfolio backtest results, see 
-        \href{https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html#result-format}{vignette-result-format}
-        for details. It can be accessed directly, but we highly recommend the package specific functions to extract any required
-        information, namely, \code{\link{backtestSelector}}, \code{\link{backtestTable}}, 
+        \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#result-format}{vignette-result-format}
+        for details. It can be accessed directly, but we highly recommend the use of the package specific functions to extract 
+        any required information, namely, \code{\link{backtestSelector}}, \code{\link{backtestTable}}, 
         \code{\link{backtestBoxPlot}}, \code{\link{backtestLeaderboard}},
         \code{\link{backtestSummary}}, \code{\link{summaryTable}}, \code{\link{summaryBarPlot}}.
 }
@@ -83,7 +83,7 @@ portfolios and datasets can be performed with parallel computation over
 multiple cores. Errors in functions are properly catched and handled so
 that the execution of the overal backtesting is not stopped (error messages
 are stored for debugging purposes). See 
-\href{https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html}{vignette}
+\href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{vignette}
 for a detailed explanation.
 }
 \examples{

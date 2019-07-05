@@ -69,12 +69,6 @@ Do the backtest on your own portfolio following few steps:
 
 ```r
 library(portfolioBacktest)
-#> Registered S3 method overwritten by 'xts':
-#>   method     from
-#>   as.zoo.xts zoo
-#> Registered S3 method overwritten by 'quantmod':
-#>   method            from
-#>   as.zoo.data.frame zoo
 data("dataset10")
 ```
 - **Step 2** - define your own portfolio
@@ -90,9 +84,6 @@ my_portfolio <- function(dataset) {
 
 ```r
 bt <- portfolioBacktest(my_portfolio, dataset10)
-#> Registered S3 method overwritten by 'R.oo':
-#>   method        from       
-#>   throw.default R.methodsS3
 ```
 - **Step 4** - check your portfolio performance
 
@@ -108,36 +99,33 @@ backtestSummary(bt)$performance
 #> ROT bps           696.9894933
 ```
 
-For a more detailed explanation on how to use the package with all the features, check the [vignette](https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html).
+For a more detailed explanation on how to use the package with all the features, check the [vignette](https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html).
 
 
 
 ## Package Snapshot
 This package backtests a list of portfolios over multiple datasets on a rolling-window basis, producing final results as in the following.
 
-
-
 - Performance table:
 
-<!--html_preserve--><div id="htmlwidget-448c5bf8b784d5d2659f" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-448c5bf8b784d5d2659f">{"x":{"filter":"none","data":[["Quintile","GMVP","Markowitz","uniform","index"],[0.0029,0.0044,0.4529,0.0021,0],[1.1383,1.1686,0.573,1.61,1.0389],[0.1074,0.0313,0.226,0.0936,0.0907],[0.1939,0.0487,0.1495,0.1921,0.1323],[0.1613,0.0418,0.3165,0.1353,0.1249],[1.8075,1.4304,0.8002,2.1967,1.3762],[1.206,1.2152,1.1246,1.2923,1.2071],[253.2452,81.7284,187.1631,837.5048,null]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>cpu time<\/th>\n      <th>Sharpe ratio<\/th>\n      <th>max drawdown<\/th>\n      <th>annual return<\/th>\n      <th>annual volatility<\/th>\n      <th>Sterling ratio<\/th>\n      <th>Omega ratio<\/th>\n      <th>ROT bps<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","pageLength":15,"scrollX":true,"order":[2,"desc"],"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5,6,7,8]},{"orderable":false,"targets":0}],"autoWidth":false,"orderClasses":false,"lengthMenu":[10,15,25,50,100],"rowCallback":"function(row, data) {\nvar value=data[0]; $(row).css({'font-weight':value == 'uniform' ? 'bold' : value == 'index' ? 'bold' : ''});\nDTWidget.formatPercentage(this, row, data, 5, 1, 3, ',', '.');\nDTWidget.formatPercentage(this, row, data, 3, 1, 3, ',', '.');\n}"}},"evals":["options.rowCallback"],"jsHooks":[]}</script><!--/html_preserve-->
+<img src="man/figures/README-table.png" width="85%" style="display: block; margin: auto;" />
 
 
 - Barplot:
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="man/figures/README-barplot.png" width="70%" style="display: block; margin: auto;" />
 
 
 - Boxplot:
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="man/figures/README-boxplot.png" width="65%" style="display: block; margin: auto;" />
 
 
 
 ## Links
-Package: [GitHub](https://github.com/dppalomar/portfolioBacktest).
+Package: [CRAN](https://CRAN.R-project.org/package=portfolioBacktest) and [GitHub](https://github.com/dppalomar/portfolioBacktest).
 
 README file: [GitHub-readme](https://github.com/dppalomar/portfolioBacktest/blob/master/README.md).
 
-Vignette: [GitHub-vignette](https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html).
+Vignette: [CRAN-vignette](https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html).
 
