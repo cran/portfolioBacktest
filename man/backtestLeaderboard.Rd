@@ -2,7 +2,7 @@
 % Please edit documentation in R/backtestLeaderboard.R
 \name{backtestLeaderboard}
 \alias{backtestLeaderboard}
-\title{Leaderboard of portfolios from the backtest results.}
+\title{Leaderboard of portfolios from the backtest results}
 \usage{
 backtestLeaderboard(bt = NA, weights = list(), summary_fun = median,
   show_benchmark = TRUE)
@@ -55,7 +55,7 @@ quintile_portfolio <- function(data) {
 }
 
 # do backtest
-bt <- portfolioBacktest(list("Quintile" = quintile_portfolio), dataset10,
+bt <- portfolioBacktest(quintile_portfolio, dataset10,
                         benchmark = c("uniform", "index"))
 
 # see all performance measures available for the ranking
@@ -64,7 +64,7 @@ backtestSummary(bt)$performance
 # show leaderboard
 leaderboard <- backtestLeaderboard(bt, weights = list("Sharpe ratio"  = 6,
                                                       "max drawdown"  = 1,
-                                                      "ROT bps"       = 1,
+                                                      "ROT (bps)"     = 1,
                                                       "cpu time"      = 1,
                                                       "failure rate"  = 1))
 leaderboard$leaderboard_scores

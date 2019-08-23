@@ -10,16 +10,19 @@ names(my_dataset) <- c("open", "index")
 test_that("Error control test for \"stockDataDownload\"", {
   
   sink(file = tempfile())
-  expect_error(stockDataDownload("NOT_SYMBOL"), "Failed to download data from any stock.")
+  expect_error(stockDataDownload("NOT_SYMBOL"), 
+               "Arguments from and to have to be passed.")
+
+  expect_error(stockDataDownload("NOT_SYMBOL", from = "1970-01-01", to = "1970-01-31", local_file_path = NULL), 
+               "Failed to download data from any stock.")
   sink()
-  
 })
 
 test_that("Error control test for \"stockDataResample\"", {
   
   X_wrong_index <- my_dataset
   index(X_wrong_index$index) <- index(X_wrong_index$index) + 1
-  expect_error(stockDataResample(X_wrong_index), "The date indexes of \"X\" are not matched.")
+  expect_error(stockDataResample(X_wrong_index), "The date indexes of \"X\" do not match.")
   
   X_non_mono <- my_dataset
   X_non_mono$open[2, ] <- NA
@@ -59,12 +62,12 @@ test_that("Error control test for \"portfolioBacktest\"", {
 
 
 # define uniform portfolio
-uniform_portfolio_fun <- function(dataset, prices = dataset$adjusted) {
-  return(rep(1/ncol(prices), ncol(prices)))
+uniform_portfolio_fun <- function(dataset) {
+  N <- ncol(dataset$adjusted)
+  return(rep(1/N, N))
 }
 
 bt <- portfolioBacktest(uniform_portfolio_fun, dataset10, benchmark = c("uniform", "index"))
-
 
 test_that("Error control test for \"backtestSelector\"", {
   
@@ -95,6 +98,47 @@ test_that("Error control test for \"backtestLeaderboard\"", {
   
   expect_error(backtestLeaderboard(bt, list("NOT_NAME" = 1)), "Contain invalid elements in \"weights\".")
   
+})
+
+
+
+test_that("Error control test for \"genRandomFuns\"", {
+  expect_error(genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+                             params_grid = list(lookback = c(100, 120, 140, 160),
+                                                delay = c(0, 5, 10, 15, 20),
+                                                regularize = c(FALSE, TRUE))),
+               "Number of functions to be generated \"N_funs\" has to be specified")
+  
+  expect_warning(tmp <- genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+                                      params_grid = list(lookback = c(100, 120, 140, 160),
+                                                         delay = c(0, 5, 10, 15, 20),
+                                                         regularize = c(FALSE, TRUE)),
+                                      N_funs = 100),
+               "Too many functions requested for only 40 possible combinations: using instead N_funs = 40.")
+  expect_equal(attr(tmp, "params_grid"), list(lookback = c(100, 120, 140, 160),
+                                              delay = c(0, 5, 10, 15, 20),
+                                              regularize = c(FALSE, TRUE)))
+})
+
+
+
+test_that("Error control test for \"plotPerformanceVsParams\"", {
+  portfolio_list <- genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+                                  params_grid = list(lookback = c(100, 120, 140, 160),
+                                                     delay = c(0, 5, 10, 15, 20),
+                                                     regularize = c(FALSE, TRUE)),
+                                  N_funs = 5)  
+  bt <- portfolioBacktest(portfolio_list, dataset10[1:2])
+  
+  expect_error(p <- plotPerformanceVsParams(bt, params_subset = list(lookback3 = TRUE)),
+               "Argument \"params_subset\" contains parameters not contained in the backtest.")
+  
+  expect_error(p <- plotPerformanceVsParams(bt, params_subset = list(lookback = 99)),
+               "Element lookback of argument \"params_subset\" is not contained in the backtest.")
+  
+  attr(bt[[1]], "params") <- NULL
+  expect_error(p <- plotPerformanceVsParams(bt),
+               "Backtest does not contain the attribute \"params\"!")
 })
 
 

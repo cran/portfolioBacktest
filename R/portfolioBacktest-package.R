@@ -1,4 +1,4 @@
-#' portfolioBacktest: Automated Backtesting of Portfolios over Multiple Datasets.
+#' portfolioBacktest: Automated Backtesting of Portfolios over Multiple Datasets
 #'
 #' Automated backtesting of multiple portfolios over multiple 
 #' datasets of stock prices in a rolling-window fashion. Intended for 
@@ -31,7 +31,6 @@
 #'
 #' For more details see the vignette:
 #' \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{CRAN-vignette}.
-#' \href{https://raw.githack.com/dppalomar/portfolioBacktest/master/vignettes/PortfolioBacktest.html}{GitHub-vignette}.
 #'
 #' @author Daniel P. Palomar and Rui ZHOU
 #'

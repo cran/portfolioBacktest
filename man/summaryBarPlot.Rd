@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotsNtables.R
 \name{summaryBarPlot}
 \alias{summaryBarPlot}
-\title{Create barplot from backtest summary.}
+\title{Create barplot from backtest summary}
 \usage{
 summaryBarPlot(bt_summary, measures = NULL, type = c("ggplot2",
   "simple"), ...)
@@ -15,7 +15,7 @@ summaryBarPlot(bt_summary, measures = NULL, type = c("ggplot2",
 `Sterling ratio`, `Omega ratio`, and `ROT bps`.}
 
 \item{type}{Type of plot. Valid options: \code{"ggplot2", "simple"}. Default is 
-\code{"ggplot2"} (the package \code{ggplot2} must be installed).}
+\code{"ggplot2"}.}
 
 \item{...}{Additional parameters (only used for plot \code{type = "simple"}); 
 for example: \code{mar} for margins as in \code{par()},

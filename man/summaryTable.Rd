@@ -2,10 +2,11 @@
 % Please edit documentation in R/plotsNtables.R
 \name{summaryTable}
 \alias{summaryTable}
-\title{Create table from backtest summary.}
+\title{Create table from backtest summary}
 \usage{
 summaryTable(bt_summary, measures = NULL, type = c("simple", "DT",
-  "grid.table"), order_col = NULL, order_dir = c("asc", "desc"))
+  "grid.table"), order_col = NULL, order_dir = c("asc", "desc"),
+  page_length = 10)
 }
 \arguments{
 \item{bt_summary}{Backtest summary as obtained from the function \code{backtestSummary}.}
@@ -18,13 +19,16 @@ summaryTable(bt_summary, measures = NULL, type = c("simple", "DT",
 \code{"simple"} and generates a simple matrix (with the other choices the 
 corresponding package must be installed).}
 
-\item{order_col}{Column number of the performance measure to be used to sort the rows 
-(only used for table \code{type = "DT"}). By default the last column 
-will be used.}
+\item{order_col}{Column number or column name of the performance measure to be used to 
+sort the rows (only used for table \code{type = "DT"}). By default the 
+last column will be used.}
 
 \item{order_dir}{Direction to be used to sort the rows (only used for table 
 \code{type = "DT"}). Valid options: \code{"asc", "desc"}. 
 Default is \code{"asc"}.}
+
+\item{page_length}{Page length for the table (only used for table \code{type = "DT"}). 
+Default is \code{10}.}
 }
 \description{
 After performing a backtest with \code{\link{portfolioBacktest}} 
@@ -49,7 +53,8 @@ quintile_portfolio <- function(data) {
 }
 
 # do backtest
-bt <- portfolioBacktest(list("Quintile" = quintile_portfolio), dataset10,
+bt <- portfolioBacktest(list("Quintile" = quintile_portfolio), 
+                        dataset10,
                         benchmark = c("uniform", "index"))
 
 # now we can obtain the table
