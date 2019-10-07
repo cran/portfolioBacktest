@@ -81,6 +81,7 @@
 #'          \code{\link{backtestSummary}}, \code{\link{summaryTable}}, \code{\link{summaryBarPlot}}.
 #' 
 #' @examples
+#' \donttest{
 #' library(portfolioBacktest)
 #' data(dataset10)  # load dataset
 #' 
@@ -99,12 +100,13 @@
 #' backtestTable(bt, measures = c("Sharpe ratio", "max drawdown"))
 #' bt_summary <- backtestSummary(bt)
 #' summaryTable(bt_summary)
+#' }
 #' 
 #' @import xts
 #' @importFrom zoo index
 #' @importFrom doSNOW registerDoSNOW
 #' @importFrom foreach foreach %dopar%
-#' @importFrom snow makeCluster stopCluster
+#' @importFrom snow makeCluster stopCluster clusterExport
 #' @export
 portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path = NULL, price_name = "adjusted",
                               paral_portfolios = 1, paral_datasets = 1,
@@ -123,6 +125,7 @@ portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path =
   if (!is.null(portfolio_funs) && !is.list(portfolio_funs)) portfolio_funs <- list(portfolio_funs)
   cost <- modifyList(list(buy = 0, sell = 0, short = 0, long_leverage = 0), cost)
   if (length(cost) != 4) stop("Problem in specifying the cost: the elements can only be buy, sell, short, and long_leverage.")
+  if (is.xts(dataset_list[[1]])) stop("Each element of \"dataset_list\" must be a list of xts objects. Try to surround your passed \"dataset_list\" with list().")
   ##############################
   
   # when portfolio_funs is passed
@@ -183,9 +186,9 @@ portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path =
       registerDoSNOW(cl)
       exports <- ls(envir = .GlobalEnv)
       exports <- exports[! exports %in% c("portfolio_fun", "dataset_list", "show_progress_bar")]
+      clusterExport(cl = cl, list = exports, envir = .GlobalEnv)
       portfolio_fun <- NULL  # ugly hack to deal with CRAN note
-      result <- foreach(portfolio_fun = portfolio_funs, .combine = c, .export = exports, 
-                        .packages = .packages(), .options.snow = opts) %dopar% {
+      result <- foreach(portfolio_fun = portfolio_funs, .combine = c, .packages = .packages(), .options.snow = opts) %dopar% {
         return(list(safeEvalPortf(portfolio_fun, dataset_list, price_name,
                                   paral_datasets, show_progress_bar,
                                   shortselling, leverage,
@@ -223,10 +226,10 @@ portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path =
                                        execution, cost,
                                        cpu_time_limit,
                                        return_portfolio, return_returns)
-        NULL
-      }, warning = function(w) return(ifelse(!is.null(w$message), w$message, ""))
-       , error   = function(e) return(ifelse(!is.null(e$message), e$message, ""))
-      )     
+        NULL}, 
+        warning = function(w) return(ifelse(!is.null(w$message), w$message, "")),
+        error   = function(e) return(ifelse(!is.null(e$message), e$message, ""))
+        )
       packages_now <- search()  # detach the newly loaded packages
       packages_det <- packages_now[!(packages_now %in% packages_default)]
       detachPackages(packages_det)
@@ -355,15 +358,16 @@ singlePortfolioBacktest <- function(portfolio_fun, dataset_list, price_name, mar
                                                       execution, cost,
                                                       cpu_time_limit,
                                                       return_portfolio, return_returns)
-      if (show_progress_bar) opts$progress(i) # show progress bar
+      if (show_progress_bar) opts$progress(i)
     }
   } else {               ########### parallel mode
     cl <- makeCluster(paral_datasets)
     registerDoSNOW(cl)
     exports <- ls(envir = .GlobalEnv)
     exports <- exports[! exports %in% c("portfolio_fun", "dat")]
+    clusterExport(cl = cl, list = exports, envir = .GlobalEnv)
     dat <- NULL  # ugly hack to deal with CRAN note
-    result <- foreach(dat = dataset_list, .combine = c, .packages = .packages(), .export = ls(envir = .GlobalEnv), .options.snow = opts) %dopar% {
+    result <- foreach(dat = dataset_list, .combine = c, .packages = .packages(), .options.snow = opts) %dopar% {
       return(list(singlePortfolioSingleXTSBacktest(portfolio_fun, dat, price_name, market,
                                                    shortselling, leverage,
                                                    T_rolling_window, optimize_every, rebalance_every, 
@@ -413,7 +417,10 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name, ma
     res$performance <- portfolioPerformance(rets = idx_return)
     res$performance["ROT (bps)"] <- Inf
     res$cpu_time <- 0
-    if (return_returns) {res$return <- idx_return; res$wealth <- idx_prices_window[-1]/as.numeric(idx_prices_window[1])}
+    if (return_returns) {
+      res$return <- idx_return
+      res$wealth <- idx_prices_window/as.numeric(idx_prices_window[1])  # initial_cash = 1
+      }
     return(res)
   }
   
@@ -430,19 +437,21 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name, ma
   if (optimize_every%%rebalance_every != 0) stop("The reoptimization period has to be a multiple of the rebalancing period.")
   if (anyNA(prices)) stop("prices contain NAs.")
   if (!is.function(portfolio_fun)) stop("portfolio_fun is not a function.")
+  if (periodicity(prices)$scale != "daily") stop("This function only accepts daily data.")
+  #if (tzone(prices) != Sys.timezone()) tzone(prices) <- Sys.timezone()
+  if (tzone(prices) != "UTC") tzone(prices) <- "UTC"
   #################################
   
   # indices
   #rebalancing_indices <- endpoints(prices, on = "weeks")[which(endpoints(prices, on = "weeks") >= T_rolling_window)]
   optimize_indices <- seq(from = T_rolling_window, to = T, by = optimize_every)
   rebalance_indices <- seq(from = T_rolling_window, to = T, by = rebalance_every)
-  if (any(!(optimize_indices %in% rebalance_indices))) stop("The reoptimization indices have to be a subset of the rebalancing indices")
-  
+  if (any(!(optimize_indices %in% rebalance_indices))) stop("The reoptimization indices have to be a subset of the rebalancing indices.")
   
   # compute w
   error <- flag_timeout <- FALSE; error_message <- NA; error_capture <- NULL; cpu_time <- c(); 
   w <- xts(matrix(NA, length(rebalance_indices), N), order.by = index(prices)[rebalance_indices])
-  colnames(w) <- colnames(prices)
+  colnames(w) <- gsub(".Adjusted", "", colnames(prices))
   
   for (i in 1:length(rebalance_indices)) {
     
@@ -558,11 +567,13 @@ returnPortfolio <- function(R, weights,
                             cost = list(buy = 0*10^(-4), sell = 0*10^(-4), short = 0*10^(-4), long_leverage = 0*10^(-4)),
                             initial_cash = 1) {
   ######## error control  #########
-  if (!is.xts(R) || !is.xts(weights)) stop("This function only accepts xts")
-  if (attr(index(R), "class") != "Date") stop("This function only accepts daily data")
+  if (!is.xts(R) || !is.xts(weights)) stop("This function only accepts xts.")
+  if (periodicity(R)$scale != "daily")
+    stop("This function only accepts daily data.")
   if (!all(index(weights) %in% index(R))) stop("Weight dates do not appear in the returns")
   if (ncol(R) != ncol(weights)) stop("Number of weights does not match the number of assets in the returns")
   if (anyNA(R[-1])) stop("Returns contain NAs")
+  #if (tzone(R) != Sys.timezone()) stop("Timezone of data is not the same as local timezone.")
   #################################
   
   # transaction cost
@@ -570,8 +581,8 @@ returnPortfolio <- function(R, weights,
   tc <- 0
 
   # fill in w with NA to match the dates of R and lag appropriately
-  w <- R; w[] <- NA
-  w[index(weights), ] <- weights
+  w <- R; w[] <- NA; colnames(w) <- colnames(weights)
+  w[as.character(index(weights)), ] <- weights
   w <- switch(match.arg(execution),  # w[t] used info up to (including) price[t]
               "same day" = lag.xts(w, 1),  # w[t] is (idealistically) executed at price[t], so will multiply return[t+1]
               "next day" = lag.xts(w, 2),  # w[t] is executed one period later at price[t+1], so will multiply return[t+2]

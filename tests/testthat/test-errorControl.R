@@ -1,10 +1,11 @@
 context("Checking package error control")
 
+#library(testthat)
+#library(portfolioBacktest)
 library(xts)
 data(dataset10)
 my_dataset <- dataset10[[1]]
 names(my_dataset) <- c("open", "index")
-
 
 
 test_that("Error control test for \"stockDataDownload\"", {
@@ -40,11 +41,13 @@ test_that("Error control test for \"portfolioBacktest\"", {
   
   expect_error(portfolioBacktest(), "The \"folder_path\" and \"portfolio_fun_list\" cannot be both NULL.")
   
-  expect_error(portfolioBacktest(list("fun1" = 1, 2)), "Each element of \"portfolio_funs\" must has a unique name.")
+  expect_error(portfolioBacktest(list("fun1" = 1), my_dataset),  "Each element of \"dataset_list\" must be a list of xts objects. Try to surround your passed \"dataset_list\" with list().")
   
-  expect_error(portfolioBacktest(list("fun1" = 1, "fun1" = 2)), "\"portfolio_funs\" contains repeated names.")
+  expect_error(portfolioBacktest(list("fun1" = 1, 2), dataset10), "Each element of \"portfolio_funs\" must has a unique name.")
   
-  expect_error(portfolioBacktest(list("fun1" = 1), my_dataset),  "Fail to find price data with name \"adjusted\" in given dataset_list.")
+  expect_error(portfolioBacktest(list("fun1" = 1, "fun1" = 2), dataset10), "\"portfolio_funs\" contains repeated names.")
+  
+  expect_error(portfolioBacktest(list("fun1" = 1), list(my_dataset)),  "Fail to find price data with name \"adjusted\" in given dataset_list.")
   
   expect_error(portfolioBacktest(list("fun1" = 1), list(list("adjusted" = 1))),  "prices have to be xts.")
   
@@ -66,6 +69,22 @@ uniform_portfolio_fun <- function(dataset) {
   N <- ncol(dataset$adjusted)
   return(rep(1/N, N))
 }
+
+
+test_that("Error control for index type of xts data", {
+  dataset_tmp <- dataset10
+  #tclass(dataset_tmp[[1]]$adjusted)
+  dataset_tmp[[1]]$adjusted <- convertIndex(dataset_tmp[[1]]$adjusted, "POSIXct")
+  #tclass(dataset_tmp[[1]]$adjusted)
+  expect_silent(bt <- portfolioBacktest(uniform_portfolio_fun, dataset_tmp[1]))
+  
+  dataset_tmp[[2]]$adjusted <- to.monthly(dataset_tmp[[2]]$adjusted)
+  #tclass(dataset_tmp[[2]]$adjusted)
+  expect_error(portfolioBacktest(uniform_portfolio_fun, dataset_tmp[2], T_rolling_window = 10),
+               "This function only accepts daily data")
+})
+
+
 
 bt <- portfolioBacktest(uniform_portfolio_fun, dataset10, benchmark = c("uniform", "index"))
 
