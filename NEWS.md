@@ -1,3 +1,12 @@
+## Changes in portfolioBacktest version 0.2.2 (2020-07-29)
+
+* Fix some CRAN small issue with function examples.
+
+* New function to add new performance measure: `add_performance()`.
+
+* Vignette revised (included references on the dangers of backtesting).
+
+
 ## Changes in portfolioBacktest version 0.2.1 (2019-10-07)
 
 * Bug fixed with global variables when using paral_portfolios > 1.
@@ -9,6 +18,16 @@
 * Bug fix in backtestLeaderboard() when some portfolios have 100% failure rate.
 
 * Three new plotting function: backtestChartCumReturns(), backtestChartDrawdown(), backtestChartStackedBar().
+
+* Structural improvement for embedded benchmarks. Now it is easier to add more benchmarks.
+
+* Add the global minimum variance portfolio (GMVP) with "shrinkage" option as a benchmark.
+
+* Add two more performance criteria: VaR (alpha = 0.95) and CVaR (alpha = 0.95) of loss.
+
+* Filter global variables by size: now the variables with size > 10 MB will not be transparent to parallel threads.
+
+* Revised test examples.
 
 
 ## Changes in portfolioBacktest version 0.2.0 (2019-08-23)

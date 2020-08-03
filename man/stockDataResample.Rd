@@ -4,8 +4,13 @@
 \alias{stockDataResample}
 \title{Generate random resamples from stock data}
 \usage{
-stockDataResample(X, N_sample = 50, T_sample = 2 * 252,
-  num_datasets = 10, rm_stocks_with_na = TRUE)
+stockDataResample(
+  X,
+  N_sample = 50,
+  T_sample = 2 * 252,
+  num_datasets = 10,
+  rm_stocks_with_na = TRUE
+)
 }
 \arguments{
 \item{X}{List of \code{xts} objects matching the structure returned by the function \code{\link{stockDataDownload}}.}
@@ -31,15 +36,16 @@ choosing a subset of the stock names and randomly choosing a
 time period over the available long period.
 }
 \examples{
-\donttest{
+\dontrun{
 library(portfolioBacktest)
 data(SP500_symbols)
 
 # download data from internet
 SP500_data <- stockDataDownload(stock_symbols = SP500_symbols, 
-                                from = "2008-12-01", to = "2011-12-01")
-# resample from downloaded, each with 50 stocks and 2-year continuous data
-my_dataset_list <- stockDataResample(SP500_data, N = 50, T = 2*252, num_datasets = 10)
+                                from = "2009-01-01", to = "2009-12-31") 
+                                
+# generate 20 resamples from data, each with 10 stocks and one quarter continuous data
+my_dataset_list <- stockDataResample(SP500_data, N = 10, T = 252/4, num_datasets = 20)
 }
 
 }

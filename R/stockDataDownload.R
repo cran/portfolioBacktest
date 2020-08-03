@@ -31,13 +31,13 @@
 #' @seealso \code{\link{stockDataResample}}
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(portfolioBacktest)
 #' data(SP500_symbols)
 #' 
 #' # download data from internet
-#' SP500_data <- stockDataDownload(stock_symbols = SP500_symbols, 
-#'                                 from = "2008-12-01", to = "2009-12-01")
+#' SP500_data <- stockDataDownload(stock_symbols = SP500_symbols,
+#'                                 from = "2009-01-01", to = "2009-12-31")
 #' }
 #' 
 #' @import xts 
@@ -102,6 +102,20 @@ stockDataDownload <- function(stock_symbols, index_symbol = NULL, from, to, rm_s
                     "volume"   = multipleXTSMerge(volume),
                     "adjusted" = multipleXTSMerge(adjusted))
   
+  # fix names of stocks in each xts
+  if ("open" %in% names(stockdata))
+    colnames(stockdata$open) <- gsub(".Open", "", colnames(stockdata$open))
+  if ("high" %in% names(stockdata))
+    colnames(stockdata$high) <- gsub(".High", "", colnames(stockdata$high))
+  if ("low" %in% names(stockdata))
+    colnames(stockdata$low) <- gsub(".Low", "", colnames(stockdata$low))
+  if ("close" %in% names(stockdata))
+    colnames(stockdata$close) <- gsub(".Close", "", colnames(stockdata$close))
+  if ("volume" %in% names(stockdata))
+    colnames(stockdata$volume) <- gsub(".Volume", "", colnames(stockdata$volume))
+  if ("adjusted" %in% names(stockdata))
+    colnames(stockdata$adjusted) <- gsub(".Adjusted", "", colnames(stockdata$adjusted))  
+  
   # if required, remove stocks with non-leading missing data
   if (rm_stocks_with_na) {
     na_nonleading_mask <- apply(stockdata$adjusted, 2, function(x) {any(diff(is.na(x)) > 0)})
@@ -122,6 +136,9 @@ stockDataDownload <- function(stock_symbols, index_symbol = NULL, from, to, rm_s
     # check if the date of stock prices and market index match
     if (any(index(stockdata$adjusted) != index(stockdata$index)))
       stop("Date of stocks prices and market index do not match.", call. = FALSE)
+    
+    # fix name of index xts
+    colnames(stockdata$index) <- gsub(".Adjusted", "", colnames(stockdata$index))
   }
   
   # sanity check
@@ -171,15 +188,16 @@ multipleXTSMerge <- function(xts_list) {
 #' @seealso \code{\link{stockDataDownload}}, \code{\link{portfolioBacktest}}
 #' 
 #' @examples 
-#' \donttest{
+#' \dontrun{
 #' library(portfolioBacktest)
 #' data(SP500_symbols)
 #' 
 #' # download data from internet
 #' SP500_data <- stockDataDownload(stock_symbols = SP500_symbols, 
-#'                                 from = "2008-12-01", to = "2011-12-01")
-#' # resample from downloaded, each with 50 stocks and 2-year continuous data
-#' my_dataset_list <- stockDataResample(SP500_data, N = 50, T = 2*252, num_datasets = 10)
+#'                                 from = "2009-01-01", to = "2009-12-31") 
+#'                                 
+#' # generate 20 resamples from data, each with 10 stocks and one quarter continuous data
+#' my_dataset_list <- stockDataResample(SP500_data, N = 10, T = 252/4, num_datasets = 20)
 #' }
 #' 
 #' @import xts
@@ -187,11 +205,11 @@ multipleXTSMerge <- function(xts_list) {
 #' @export
 stockDataResample <- function(X, N_sample = 50, T_sample = 2*252, num_datasets = 10, rm_stocks_with_na = TRUE) {
   # check data time zone
-  if ((!is.null(X$index)) && any(index(X$open) != index(X$index))) stop("The date indexes of \"X\" do not match.")
+  if ((!is.null(X$index)) && any(index(X$adjusted) != index(X$index))) stop("The date indexes of \"X\" do not match.")
   
   # if required, remove stocks with non-leading missing data
   if (rm_stocks_with_na) {
-    na_nonleading_mask <- apply(X$open, 2, function(x) {any(diff(is.na(x)) > 0)})
+    na_nonleading_mask <- apply(X$adjusted, 2, function(x) any(diff(is.na(x)) > 0))
     if (any(na_nonleading_mask)) stop("\"X\" does not satisfy monotone missing-data pattern.")
   }
   
