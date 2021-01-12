@@ -93,17 +93,17 @@ test_that("backtest results coincide with PerformanceAnalytics and base R", {
   
   
   #
-  # Check "next day" execution vs "same day" execution
+  # Check "next period" execution vs "same period" execution
   #
-  bt_next_day <- portfolioBacktest(portfolios, 
+  bt_next_period <- portfolioBacktest(portfolios, 
                           dataset_list = list("dataset 1" = list("adjusted" = prices)),  # just one single dataset!
                           T_rolling_window = 20,
                           optimize_every = 20, 
                           rebalance_every = 20,
-                          execution = "next day",
+                          execution = "next period",
                           return_portfolio = TRUE, 
                           return_returns = TRUE)
-  expect_equivalent(bt$Uniform$`dataset 1`$w_designed, bt_next_day$Uniform$`dataset 1`$w_designed)
+  expect_equivalent(bt$Uniform$`dataset 1`$w_designed, bt_next_period$Uniform$`dataset 1`$w_designed)
   w_designed_lagged <- prices
   w_designed_lagged[] <- NA
   w_designed_lagged[index(bt$Uniform$`dataset 1`$w_designed), ] <- bt$Uniform$`dataset 1`$w_designed
@@ -112,8 +112,8 @@ test_that("backtest results coincide with PerformanceAnalytics and base R", {
   
   # compare with PerformanceAnalytics
   PerfAnal_next_day <- PerformanceAnalytics::Return.portfolio(X_lin, weights = w_designed_lagged, verbose = TRUE)
-  expect_equivalent(bt_next_day$Uniform$`dataset 1`$return, PerfAnal_next_day$returns)
-  expect_equivalent(bt_next_day$Uniform$`dataset 1`$w_bop, PerfAnal_next_day$BOP.Weight)
+  expect_equivalent(bt_next_period$Uniform$`dataset 1`$return, PerfAnal_next_day$returns)
+  expect_equivalent(bt_next_period$Uniform$`dataset 1`$w_bop, PerfAnal_next_day$BOP.Weight)
 })
   
 
@@ -139,11 +139,10 @@ test_that("backtest results and performance measures coincide with the precomput
   load("bt_table_check.RData")
   expect_equivalent(backtestTable(bt)[1:8], bt_table_check) 
   
-  # bt_summary_check <- backtestSummary(bt, summary_fun = median)[1:2]
+  # bt_summary_check <- head(backtestSummary(bt, summary_fun = median)[[1]], -2)
   # save(bt_summary_check, file = "bt_summary_check.RData", version = 2)
   load("bt_summary_check.RData")
-  bt_summary <- backtestSummary(bt, summary_fun = median)[1:2]
-  expect_equivalent(backtestSummary(bt, summary_fun = median)[1:2], bt_summary)  # compare except cpu time
+  expect_equivalent(head(backtestSummary(bt, summary_fun = median)[[1]], -2), bt_summary_check)  # compare except cpu time
 })
 
 

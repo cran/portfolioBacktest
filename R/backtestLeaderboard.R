@@ -12,8 +12,7 @@
 #' @param weights List of weights for the different performance measures as obtained 
 #'                in \code{\link{backtestSummary}()$performance} (i.e., 
 #'                \code{"Sharpe ratio"}, \code{"max drawdown"}, \code{"annual return"}, \code{"annual volatility"}, 
-#'                \code{"Sterling ratio"}, \code{"Omega ratio"}, \code{"ROT bps"},
-#'                \code{"cpu_time"}, and \code{"failure ratio"}), as well as
+#'                \code{"Sterling ratio"}, \code{"Omega ratio"}, \code{"ROT bps"}, as well as
 #'                \code{"cpu time"} and \code{"failure rate"}.
 #'                For example: \code{weights = list("Sharpe ratio" = 8, "max drawdown" = 4)}.
 #'                
@@ -64,16 +63,14 @@ backtestLeaderboard <- function(bt = NA, weights = list(), summary_fun = median,
   if (!is.list(weights)) stop("Argument \"weights\" must be a list.")
   if (any(unlist(weights) < 0)) stop("All weights must be non-negative.")
   if (all(unlist(weights) == 0)) stop("Cannot set all weights be zero.")
-  
+
   tmp <- backtestSummary(bt, summary_fun = summary_fun, show_benchmark = show_benchmark)
-  performance_summary <- t(tmp[[1]])
-  failure_ratio       <- tmp$failure_rate
-  cpu_time_summary    <- tmp$cpu_time_summary
+  performance_summary <- t(tmp$performance_summary)
   error_message       <- tmp$error_message
   
-  performance_names <- names(bt[[1]][[1]]$performance)
-  judge <- attr(bt[[1]][[1]]$performance, "judge")
-  weights_defname <- c(performance_names, "cpu time", "failure rate")
+  performance_names <- colnames(performance_summary)
+  judge <- c(attr(bt[[1]][[1]]$performance, "judge"), -1, -1)  # the last two are for "cpu time" and "failure rate"
+  weights_defname <- colnames(performance_summary)
   weights_default <- as.list(rep(0, length(weights_defname)))
   names(weights_default) <- weights_defname
   weights_comb <- modifyList(weights_default, weights)
@@ -84,10 +81,10 @@ backtestLeaderboard <- function(bt = NA, weights = list(), summary_fun = median,
   
   # sort the valid scores
   weights_rescaled <- weights_comb / sum(weights_comb)
-  mask_valid <- failure_ratio != 1
-  scores <- cbind(apply(t(t(performance_summary[mask_valid, ]) * judge), 2, rank_percentile),
-                  rank_percentile(-cpu_time_summary[mask_valid]),
-                  rank_percentile(-failure_ratio[mask_valid]))
+  mask_valid <- performance_summary[, "failure rate"] != 1
+  if (all(!mask_valid))
+    stop("All portfolios gave errors.")
+  scores <- apply(t(t(performance_summary[mask_valid, ]) * judge), 2, rank_percentile)
   final_score <- scores %*% weights_rescaled
   index_sorting <- sort(final_score, decreasing = TRUE, index = TRUE, na.last = TRUE)$ix
   
@@ -102,9 +99,7 @@ backtestLeaderboard <- function(bt = NA, weights = list(), summary_fun = median,
 
   # also show original performance
   error_summary <- error_message[index_sorted]
-  leaderboard_performance <- cbind(performance_summary,
-                                   cpu_time_summary,
-                                   failure_ratio)[index_sorted, ]
+  leaderboard_performance <- performance_summary[index_sorted, ]
   
   # add rownames and colnames
   rownames(leaderboard) <- rownames(leaderboard_performance) <- names(error_message)[index_sorted]

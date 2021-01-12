@@ -2,7 +2,7 @@
 % Please edit documentation in R/stockDataDownload.R
 \name{stockDataResample}
 \alias{stockDataResample}
-\title{Generate random resamples from stock data}
+\title{Generate random resamples from financial data}
 \usage{
 stockDataResample(
   X,
@@ -15,43 +15,15 @@ stockDataResample(
 \arguments{
 \item{X}{List of \code{xts} objects matching the structure returned by the function \code{\link{stockDataDownload}}.}
 
-\item{N_sample}{Number of stocks in each resample.}
+\item{N_sample}{Desired number of financial instruments in each resample.}
 
-\item{T_sample}{Length of each resample (consecutive samples with a random initial time).}
+\item{T_sample}{Desired length of each resample (consecutive samples with a random initial time).}
 
-\item{num_datasets}{Number of resampled datasets (chosen randomly among the stock universe).}
+\item{num_datasets}{Number of resampled datasets (chosen randomly among the financial instrument universe).}
 
-\item{rm_stocks_with_na}{Logical value indicating whether to remove stocks with missing values 
-(ignoring leading missing values). Default is \code{TRUE}.}
-}
-\value{
-List of datasets resampled from \code{X}.
+\item{rm_stocks_with_na}{Logical value indicating whether to remove instruments with inner missing 
+values (ignoring leading and trailing missing values). Default is \code{TRUE}.}
 }
 \description{
-This function resamples the stock data downloaded by
-\code{\link{stockDataDownload}} to obtain many datasets for a 
-subsequent backtesting with \code{\link{portfolioBacktest}}.
-Given the original data, each resample is obtained by randomly
-choosing a subset of the stock names and randomly choosing a
-time period over the available long period.
-}
-\examples{
-\dontrun{
-library(portfolioBacktest)
-data(SP500_symbols)
-
-# download data from internet
-SP500_data <- stockDataDownload(stock_symbols = SP500_symbols, 
-                                from = "2009-01-01", to = "2009-12-31") 
-                                
-# generate 20 resamples from data, each with 10 stocks and one quarter continuous data
-my_dataset_list <- stockDataResample(SP500_data, N = 10, T = 252/4, num_datasets = 20)
-}
-
-}
-\seealso{
-\code{\link{stockDataDownload}}, \code{\link{portfolioBacktest}}
-}
-\author{
-Rui Zhou and Daniel P. Palomar
+This function is deprecated. Use instead \code{\link{financialDataResample}()}.
 }

@@ -1,3 +1,18 @@
+## Changes in portfolioBacktest version 0.2.3 (2021-01-12)
+
+* Reimplement parallel mode using package `pbapply`.
+
+* Add a temporary argument `source_to_local` in function `portfolioBacktest()` to address the issues of using package `CVXR` within files.
+
+* Add MDP and MSRP as benchmarks.
+
+* Fix performance computation when no investment happens in some days.
+
+* Function `stockDataResample()` deprecated and revised as `financialDataResample()` to work with other than stock data (e.g., crypto data) and without requiring the elements `$adjusted` or `$index`.
+
+* Package now works with non-daily data. For example, for hourly crypto data, one needs to specify `bars_per_year = 24*365`.
+
+
 ## Changes in portfolioBacktest version 0.2.2 (2020-07-29)
 
 * Fix some CRAN small issue with function examples.

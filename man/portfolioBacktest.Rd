@@ -8,6 +8,7 @@ portfolioBacktest(
   portfolio_funs = NULL,
   dataset_list,
   folder_path = NULL,
+  source_to_local = TRUE,
   price_name = "adjusted",
   paral_portfolios = 1,
   paral_datasets = 1,
@@ -18,7 +19,8 @@ portfolioBacktest(
   T_rolling_window = 252,
   optimize_every = 20,
   rebalance_every = 1,
-  execution = c("same day", "next day"),
+  bars_per_year = NA,
+  execution = c("same period", "next period"),
   cost = list(buy = 0, sell = 0, short = 0, long_leverage = 0),
   cpu_time_limit = Inf,
   return_portfolio = TRUE,
@@ -35,19 +37,27 @@ weights. See
 for details.}
 
 \item{dataset_list}{List of datasets, each containing a list of \code{xts} objects, as generated
-by the function \code{\link{stockDataResample}}.}
+by the function \code{\link{financialDataResample}}.}
 
 \item{folder_path}{If \code{portfolio_funs} is not defined, this should contain the path to a folder 
 containing the portfolio functions saved in files. See 
 \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{vignette}
 for details.}
 
+\item{source_to_local}{Logical value indicating whether to source files to local environment (default is \code{TRUE}).
+It might be dangerous to set it to \code{FALSE} as in such case the global environment may be changed.
+We suggest only to allow \code{FALSE} when the code in the source files does not work when locally 
+sourced, e.g., with some versions of package \code{CVXR}. In that case, we further recommend to set 
+\code{paral_portfolios > 1} to avoid changing the global environment.}
+
 \item{price_name}{Name of the \code{xts} column in each dataset that contains the prices to be used in the portfolio return 
 computation (default is \code{"adjusted"}).}
 
-\item{paral_portfolios}{Interger indicating number of portfolios to be evaluated in parallel (default is \code{1}).}
+\item{paral_portfolios}{Interger indicating number of portfolios to be evaluated in parallel (default is \code{1}),
+see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#parallel-backtesting}{vignette-paralle-mode} for details.}
 
-\item{paral_datasets}{Interger indicating number of datasets to be evaluated in parallel (default is \code{1}).}
+\item{paral_datasets}{Interger indicating number of datasets to be evaluated in parallel (default is \code{1}),
+see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#parallel-backtesting}{vignette-paralle-mode} for details.}
 
 \item{show_progress_bar}{Logical value indicating whether to show progress bar (default is \code{FALSE}).}
 
@@ -68,10 +78,13 @@ computation (default is \code{"adjusted"}).}
 
 \item{rebalance_every}{How often the portfolio is to be rebalanced (default is \code{1}).}
 
-\item{execution}{String that can be either \code{"same day"} (default) or \code{"next day"}. 
+\item{bars_per_year}{Number of bars per year. By default it will be calculated automatically 
+(e.g., for daily data there are 252 bars per year).}
+
+\item{execution}{String that can be either \code{"same period"} (default) or \code{"next period"}. 
 At the rebalancing period \code{t}, the portfolio has used information up to (and including)
-period \code{t}. Same day execution means one can get into the position at that period \code{t},
-whereas the next day execution means that one can only get into the position the following day.}
+period \code{t}. Same period execution means one can get into the position at that period \code{t},
+whereas the next period execution means that one can only get into the position the following period.}
 
 \item{cost}{List containing four different types of transaction costs (common for all assets) 
 for buying, selling, shorting, and long leveraging. The default is 
@@ -84,7 +97,7 @@ If some elements are not specified then they will be automatically set to zero.}
 \item{return_portfolio}{Logical value indicating whether to return the portfolios (default is \code{TRUE}).
 Two portfolios are returned: \code{w_designed} is the designed portfolio at each
 given rebalancing period (using all the information up to and including that period,
-which can be executed either on the same day or the following day)
+which can be executed either on the same period or the following period)
 and \code{w_bop} is the "beginning-of-period" portfolio (i.e., at each period it contains 
 the weights held in the market in the previous period so that the portfolio return at 
 that period is just the product of the asset returns and \code{w_bop} at that period.)}
@@ -108,7 +121,7 @@ Each portfolio design is easily defined as a
 function that takes as input a window of the stock prices and outputs the 
 portfolio weights. Multiple portfolios can be easily specified as a list 
 of functions or as files in a folder. Multiple datasets can be conveniently 
-obtained with the function \code{\link{stockDataResample}} that resamples
+obtained with the function \code{\link{financialDataResample}} that resamples
 the data downloaded with the function \code{\link{stockDataDownload}}.
 The results can be later assessed and arranged with tables and plots.
 The backtesting can be highly time-consuming depending on the number of 
@@ -143,7 +156,7 @@ summaryTable(bt_summary)
 
 }
 \seealso{
-\code{\link{stockDataDownload}}, \code{\link{stockDataResample}},
+\code{\link{stockDataDownload}}, \code{\link{financialDataResample}},
          \code{\link{backtestSelector}}, \code{\link{backtestTable}}, 
          \code{\link{backtestBoxPlot}}, \code{\link{backtestLeaderboard}},
          \code{\link{backtestSummary}}, \code{\link{summaryTable}}, \code{\link{summaryBarPlot}}.

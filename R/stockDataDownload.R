@@ -28,7 +28,7 @@
 #' 
 #' @author Rui Zhou and Daniel P. Palomar
 #' 
-#' @seealso \code{\link{stockDataResample}}
+#' @seealso \code{\link{financialDataResample}}
 #' 
 #' @examples
 #' \dontrun{
@@ -165,21 +165,21 @@ multipleXTSMerge <- function(xts_list) {
 
 
 
-#' @title Generate random resamples from stock data
+#' @title Generate random resamples from financial data
 #' 
-#' @description This function resamples the stock data downloaded by
-#' \code{\link{stockDataDownload}} to obtain many datasets for a 
+#' @description This function resamples the financial data (e.g., downloaded 
+#' with \code{\link{stockDataDownload}}) to obtain many datasets for a 
 #' subsequent backtesting with \code{\link{portfolioBacktest}}.
 #' Given the original data, each resample is obtained by randomly
-#' choosing a subset of the stock names and randomly choosing a
+#' choosing a subset of the financial instruments and randomly choosing a
 #' time period over the available long period.
 #' 
 #' @param X List of \code{xts} objects matching the structure returned by the function \code{\link{stockDataDownload}}.
-#' @param N_sample Number of stocks in each resample.
-#' @param T_sample Length of each resample (consecutive samples with a random initial time).
-#' @param num_datasets Number of resampled datasets (chosen randomly among the stock universe).
-#' @param rm_stocks_with_na Logical value indicating whether to remove stocks with missing values 
-#'                          (ignoring leading missing values). Default is \code{TRUE}.
+#' @param N_sample Desired number of financial instruments in each resample.
+#' @param T_sample Desired length of each resample (consecutive samples with a random initial time).
+#' @param num_datasets Number of resampled datasets (chosen randomly among the financial instrument universe).
+#' @param rm_stocks_with_na Logical value indicating whether to remove instruments with inner missing 
+#'                          values (ignoring leading and trailing missing values). Default is \code{TRUE}.
 #' 
 #' @return List of datasets resampled from \code{X}.
 #' 
@@ -197,48 +197,74 @@ multipleXTSMerge <- function(xts_list) {
 #'                                 from = "2009-01-01", to = "2009-12-31") 
 #'                                 
 #' # generate 20 resamples from data, each with 10 stocks and one quarter continuous data
-#' my_dataset_list <- stockDataResample(SP500_data, N = 10, T = 252/4, num_datasets = 20)
+#' my_dataset_list <- financialDataResample(SP500_data, N = 10, T = 252/4, num_datasets = 20)
 #' }
 #' 
 #' @import xts
 #'         zoo
+#' @importFrom utils head
 #' @export
-stockDataResample <- function(X, N_sample = 50, T_sample = 2*252, num_datasets = 10, rm_stocks_with_na = TRUE) {
-  # check data time zone
-  if ((!is.null(X$index)) && any(index(X$adjusted) != index(X$index))) stop("The date indexes of \"X\" do not match.")
+financialDataResample <- function(X, N_sample = 50, T_sample = 2*252, num_datasets = 10, rm_stocks_with_na = TRUE) {
+  # error control for indices
+  X_index_list <- lapply(X, function(x) index(x))
+  X_equal_indices_list <- sapply(X_index_list, function(x) identical(x, X_index_list[[1]]))
+  if (!all(X_equal_indices_list)) stop("The date indices of \"X\" do not match.")
+
+  # separate univariate from multivariate
+  num_cols <- sapply(X, ncol)
+  N <- max(num_cols)  # some elements will have N cols, others just 1
+  elems_N <- which(num_cols == N)
+  elems_1 <- setdiff(1:length(X), elems_N)
   
-  # if required, remove stocks with non-leading missing data
-  if (rm_stocks_with_na) {
-    na_nonleading_mask <- apply(X$adjusted, 2, function(x) any(diff(is.na(x)) > 0))
-    if (any(na_nonleading_mask)) stop("\"X\" does not satisfy monotone missing-data pattern.")
+  # if required, check inner NAs
+  if (rm_stocks_with_na) {   
+    inner_NA_pattern <- sapply(X[elems_N], function(x) apply(x, 2, any_inner_NA))
+    columns_to_keep <- rowSums(inner_NA_pattern) == 0
+    if (any(!columns_to_keep)) 
+      warning("Some xts object does not satisfy monotone missing-data pattern.\n", call. = FALSE)
+    #X[elems_N] <- apply(X[elems_N], function(x) x[, columns_to_keep])
+    #N <- ncol(X[[elems_N[1]]])
   }
   
   # resampling
-  cols <- sapply(X, ncol)
-  N <- max(cols)  # some elements will have N cols, others just 1
-  elems_N <- which(cols == N)
-  elems_1 <- if (any(cols == 1)) which(cols == 1)
-             else NULL
   T <- nrow(X[[1]])
-  if (T < T_sample) stop("\"T_sample\" can not be greater than the date length of \"X\".")
+  if (T < T_sample) stop("\"T_sample\" cannot be greater than the date length of \"X\".")
   dataset <- vector("list", num_datasets)
   for (i in 1:num_datasets) {
-    t_start <- sample(T-T_sample+1, 1)
-    t_mask <- t_start:(t_start+T_sample-1)
+    t_start <- sample(T - T_sample + 1, 1)
+    t_mask <- t_start:(t_start + T_sample - 1)
     N_mask <- rep(1:N)[!is.na(X[[1]][t_start, ])]
     stock_mask <- if (length(N_mask) <= N_sample) N_mask
                   else sample(N_mask, N_sample)
     dataset[[i]] <- vector("list", length(X))
     names(dataset[[i]]) <- names(X)
-    dataset[[i]][elems_N] <- lapply(X[elems_N], function(x) {x[t_mask, stock_mask]})
-    if (!is.null(elems_1)) dataset[[i]][elems_1] <- lapply(X[elems_1], function(x) {x[t_mask, ]})
+    dataset[[i]][elems_N] <- lapply(X[elems_N], function(x) x[t_mask, stock_mask])
+    if (length(elems_1) > 0) dataset[[i]][elems_1] <- lapply(X[elems_1], function(x) x[t_mask, ])
   }
   names(dataset) <- paste("dataset", 1:num_datasets)
-  message(sprintf("%d datasets resampled (with N = %d stocks and length T = %d) from the stock data between %s and %s.", 
-                  num_datasets, N_sample, T_sample, index(first(X$adjusted)), index(last(X$adjusted))))
+  message(sprintf("%d datasets resampled (with N = %d instruments and length T = %d) from the original data between %s and %s.", 
+                  num_datasets, N_sample, T_sample, paste(head(X_index_list[[1]], 2))[1], last(X_index_list[[1]])))
 
   return(dataset)
 }
 
 
 
+#' @title Generate random resamples from financial data
+#' 
+#' @description This function is deprecated. Use instead \code{\link{financialDataResample}()}.
+#' 
+#' @inheritParams financialDataResample
+#' 
+#' @export
+stockDataResample <- function(X, N_sample = 50, T_sample = 2*252, num_datasets = 10, rm_stocks_with_na = TRUE) {
+  .Deprecated("financialDataResample")
+}
+
+
+any_inner_NA <- function (y) {
+  idx_obs <- which(!is.na(y))
+  if (length(idx_obs) == 0) 
+    return(FALSE)
+  else anyNA(y[min(idx_obs):max(idx_obs)])
+}
