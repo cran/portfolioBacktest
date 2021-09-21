@@ -1,15 +1,15 @@
 # This file is only to store some benchmark portfolios
 
 # uniform portfolio function
-uniform_portfolio_fun <- function(data) {
-  N <- ncol(data$adjusted)
+uniform_portfolio_fun <- function(data, ...) {
+  N <- ncol(data[[1]])
   return(rep(1/N, N))
 }
 
 # inverse-volatility portfolio function
 #' @importFrom stats cov
-IVP_portfolio_fun <- function(data) {
-  X <- diff(log(data$adjusted))[-1]
+IVP_portfolio_fun <- function(data, ...) {
+  X <- diff(log(data[[1]]))[-1]
   sigma <- sqrt(diag(cov(X)))
   w <- 1/sigma
   w <- w/sum(w)
@@ -23,14 +23,14 @@ IVP_portfolio_fun <- function(data) {
 
 # Global Minimum Variance Portfolio
 #' @importFrom quadprog solve.QP
-GMVP <- function(data, shrinkage = FALSE) {
+GMVP <- function(data, shrinkage = FALSE, ...) {
   shortselling <- parent.frame(n = 2)$shortselling  # inherit shortselling from grandparent environment
   if (is.null(shortselling)) shortselling <- FALSE
   
   leverage <- parent.frame(n = 2)$leverage  # inherit shortselling from grandparent environment
   if (is.null(leverage)) leverage <- Inf
   
-  X <- diff(log(data$adjusted))[-1]
+  X <- diff(log(data[[1]]))[-1]
   Sigma <- if (shrinkage) cov_LedoitWolf(X) else cov(X)
   
   if (!shortselling) {
@@ -52,8 +52,8 @@ GMVP <- function(data, shrinkage = FALSE) {
 
 
 # Markowitz Maximum Sharpe-Ratio Portfolio (MSRP)
-MSRP <- function(data) {
-  X <- diff(log(data$adjusted))[-1]
+MSRP <- function(data, ...) {
+  X <- diff(log(data[[1]]))[-1]
   mu <- colMeans(X)
   Sigma <- cov(X)
   w <- MSRP_solver(mu, Sigma)
@@ -61,8 +61,8 @@ MSRP <- function(data) {
 }
 
 # Most diversified portfolio (MDP)
-MDP <- function(data) {
-  X <- diff(log(data$adjusted))[-1]
+MDP <- function(data, ...) {
+  X <- diff(log(data[[1]]))[-1]
   Sigma <- cov(X)
   mu <- sqrt(diag(Sigma))
   w <- MSRP_solver(mu, Sigma)
@@ -77,12 +77,12 @@ MDP <- function(data) {
 
 # benchmark library
 benchmark_library <- list(
-  "uniform" = uniform_portfolio_fun,
-  "IVP"     = IVP_portfolio_fun,
-  "GMVP"    = function(data) GMVP(data, FALSE),
-  "MSRP"    = MSRP,
-  "MDP"     = MDP,
-  "GMVP + shrinkage"    = function(data) GMVP(data, TRUE)
+  "uniform"          = uniform_portfolio_fun,
+  "IVP"              = IVP_portfolio_fun,
+  "GMVP"             = function(data, ...) GMVP(data, shrinkage = FALSE, ...),
+  "MSRP"             = MSRP,
+  "MDP"              = MDP,
+  "GMVP + shrinkage" = function(data, ...) GMVP(data, shrinkage = TRUE, ...)
 )
 
 

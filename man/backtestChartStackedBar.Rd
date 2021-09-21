@@ -40,7 +40,7 @@ data(dataset10)  # load dataset
 dataset10_5stocks <- lapply(dataset10, function(x) {x$adjusted <- x$adjusted[, 1:5]; return(x)})
 
 # define GMVP (with heuristic not to allow shorting)
-GMVP_portfolio_fun <- function(dataset) {
+GMVP_portfolio_fun <- function(dataset, ...) {
   X <- diff(log(dataset$adjusted))[-1]  # compute log returns
   Sigma <- cov(X)  # compute SCM
   # design GMVP
@@ -62,7 +62,7 @@ backtestChartStackedBar(bt, "GMVP", legend = TRUE)
 }
 \seealso{
 \code{\link{summaryBarPlot}}, \code{\link{backtestBoxPlot}}, 
-         \code{\link{backtestChartCumReturns}}, \code{\link{backtestChartDrawdown}}
+         \code{\link{backtestChartCumReturn}}, \code{\link{backtestChartDrawdown}}
 }
 \author{
 Daniel P. Palomar and Rui Zhou

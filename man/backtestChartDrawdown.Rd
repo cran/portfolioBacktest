@@ -37,7 +37,7 @@ library(portfolioBacktest)
 data(dataset10)  # load dataset
 
 # define your own portfolio function
-quintile_portfolio <- function(data) {
+quintile_portfolio <- function(data, ...) {
   X <- diff(log(data$adjusted))[-1]  
   N <- ncol(X)
   ranking <- sort(colMeans(X), decreasing = TRUE, index.return = TRUE)$ix
@@ -57,7 +57,7 @@ backtestChartDrawdown(bt)
 }
 \seealso{
 \code{\link{summaryBarPlot}}, \code{\link{backtestBoxPlot}}, 
-         \code{\link{backtestChartCumReturns}}, \code{\link{backtestChartStackedBar}}
+         \code{\link{backtestChartCumReturn}}, \code{\link{backtestChartStackedBar}}
 }
 \author{
 Daniel P. Palomar and Rui Zhou

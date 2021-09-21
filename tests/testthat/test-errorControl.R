@@ -16,6 +16,7 @@ test_that("Error control test for \"stockDataDownload\"", {
   sink()
 })
 
+
 test_that("Error control test for \"financialDataResample\"", {
   X_wrong_index <- my_dataset
   index(X_wrong_index$index) <- index(X_wrong_index$index) + 1
@@ -24,9 +25,10 @@ test_that("Error control test for \"financialDataResample\"", {
   X_non_mono <- my_dataset
   X_non_mono$adjusted[2, ] <- NA
   #expect_error(financialDataResample(X_non_mono), "\"X\" does not satisfy monotone missing-data pattern.")
-  expect_warning(financialDataResample(X_non_mono), "Some xts object does not satisfy monotone missing-data pattern.")
-  expect_error(financialDataResample(my_dataset, T = 1e10,), "\"T_sample\" cannot be greater than the date length of \"X\".")
+  expect_error(financialDataResample(X_non_mono), "Time period without any stock without NAs!")
+  expect_error(financialDataResample(my_dataset, T = 1e10), "\"T_sample\" cannot be greater than the date length of \"X\".")
 })
+
 
 test_that("Error control test for \"portfolioBacktest\"", {
   
@@ -51,7 +53,7 @@ test_that("Error control test for \"portfolioBacktest\"", {
 
   expect_error(portfolioBacktest(list("fun1" = 1), list(list("adjusted" = 1))),  "prices have to be xts.")
   
-  expect_error(portfolioBacktest(list("fun1" = 1), dataset10, T_rolling_window = 1e10),  "T is not large enough for the given sliding window length.")
+  expect_error(portfolioBacktest(list("fun1" = 1), dataset10, lookback = 1e10),  "T is not large enough for the given lookback window length.")
   
   expect_error(portfolioBacktest(list("fun1" = 1), dataset10, optimize_every = 3, rebalance_every = 2),  
                "The reoptimization period has to be a multiple of the rebalancing period.")
@@ -66,12 +68,6 @@ test_that("Error control test for \"portfolioBacktest\"", {
 })
 
 
-# define uniform portfolio
-uniform_portfolio_fun <- function(dataset) {
-  N <- ncol(dataset$adjusted)
-  return(rep(1/N, N))
-}
-
 
 # test_that("Error control for index type of xts data", {
 #   dataset_tmp <- dataset10
@@ -79,18 +75,19 @@ uniform_portfolio_fun <- function(dataset) {
 #   dataset_tmp[[1]]$adjusted <- convertIndex(dataset_tmp[[1]]$adjusted, "POSIXct")
 #   #tclass(dataset_tmp[[1]]$adjusted)
 #   
-#   #expect_message(bt <- portfolioBacktest(uniform_portfolio_fun, dataset_tmp[1]),
+#   #expect_message(bt <- portfolioBacktest(ewp_fun, dataset_tmp[1]),
 #   #               "Backtesting 1 portfolios over 1 datasets (periodicity = daily data)")
 #   
 #   # dataset_tmp[[2]]$adjusted <- to.monthly(dataset_tmp[[2]]$adjusted)
 #   # #tclass(dataset_tmp[[2]]$adjusted)
-#   # expect_error(portfolioBacktest(uniform_portfolio_fun, dataset_tmp[2], T_rolling_window = 10),
+#   # expect_error(portfolioBacktest(ewp_fun, dataset_tmp[2], lookback = 10),
 #   #              "This function only accepts daily data")
 # })
 
 
 
-bt <- portfolioBacktest(uniform_portfolio_fun, dataset10, benchmark = c("uniform", "index"))
+bt <- portfolioBacktest(portfolioBacktest:::uniform_portfolio_fun, dataset10, 
+                        benchmarks = c("uniform", "index"))
 
 test_that("Error control test for \"backtestSelector\"", {
   
@@ -105,10 +102,9 @@ test_that("Error control test for \"backtestSelector\"", {
 
 
 test_that("Error control test for \"backtestTable\"", {
-  
   expect_error(backtestTable(bt, measures = "NOT_MEASURE"), "\"measures\" contains invalid element.")
-  
 })
+
 
 test_that("Error control test for \"backtestLeaderboard\"", {
   
@@ -125,13 +121,13 @@ test_that("Error control test for \"backtestLeaderboard\"", {
 
 
 test_that("Error control test for \"genRandomFuns\"", {
-  expect_error(genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+  expect_error(genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
                              params_grid = list(lookback = c(100, 120, 140, 160),
                                                 delay = c(0, 5, 10, 15, 20),
                                                 regularize = c(FALSE, TRUE))),
                "Number of functions to be generated \"N_funs\" has to be specified")
   
-  expect_warning(tmp <- genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+  expect_warning(tmp <- genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
                                       params_grid = list(lookback = c(100, 120, 140, 160),
                                                          delay = c(0, 5, 10, 15, 20),
                                                          regularize = c(FALSE, TRUE)),
@@ -145,7 +141,7 @@ test_that("Error control test for \"genRandomFuns\"", {
 
 
 test_that("Error control test for \"plotPerformanceVsParams\"", {
-  portfolio_list <- genRandomFuns(portfolio_fun = uniform_portfolio_fun,
+  portfolio_list <- genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
                                   params_grid = list(lookback = c(100, 120, 140, 160),
                                                      delay = c(0, 5, 10, 15, 20),
                                                      regularize = c(FALSE, TRUE)),

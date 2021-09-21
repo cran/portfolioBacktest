@@ -19,7 +19,7 @@ summaryTable(
 
 \item{measures}{String vector to select performane measures (default is all) from
 `Sharpe ratio`, `max drawdown`, `annual return`, `annual volatility`, 
-`Sterling ratio`, `Omega ratio`, and `ROT bps`.}
+`Sterling ratio`, `Omega ratio`, `ROT bps`, etc.}
 
 \item{caption}{Table caption (only works for \code{type = "DT"}).}
 
@@ -51,7 +51,7 @@ library(portfolioBacktest)
 data(dataset10)  # load dataset
 
 # define your own portfolio function
-quintile_portfolio <- function(data) {
+quintile_portfolio <- function(data, ...) {
   X <- diff(log(data$adjusted))[-1]  
   N <- ncol(X)
   ranking <- sort(colMeans(X), decreasing = TRUE, index.return = TRUE)$ix
