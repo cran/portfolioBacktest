@@ -1,6 +1,6 @@
-ab804ce62942461422b4920510061c9e *DESCRIPTION
+8cc4b9b99a808c781e2b00480f266843 *DESCRIPTION
 65e3ea9a5210b4a256c7f589c5a0eb8f *NAMESPACE
-6446ae349eb255cd7f027ce7c60c9637 *NEWS.md
+5d7a87002ed489f91101d7e3e143d4b9 *NEWS.md
 86e78129d8ecaaea4979972dbf26eb98 *R/SP500_symbols.R
 e68fbf4ac7e527d29c32e1440335506e *R/backtestLeaderboard.R
 2f46620ecb0eeae19b2f89b3d8909b96 *R/backtestSummary.R
@@ -18,7 +18,7 @@ ca66b98386e0dcffbd2c6f9140ea6f7f *R/stockDataDownload.R
 cf6e2316a97f88acb0f9767eec93fc98 *build/vignette.rds
 a0c93fb7190d5e3f13566e19c5f2ee1c *data/SP500_symbols.RData
 5e5062a34ff014c712d45f375ffadb75 *data/dataset10.RData
-7bec31710824fa03272425717cddcd6b *inst/CITATION
+ee5fc523b2897441012bfaa76e5b8ffa *inst/CITATION
 0ae52c48aeb8a81979454c0d078847e7 *inst/doc/PortfolioBacktest.html
 369e1853d736f3c20ce2d50c040b0551 *inst/doc/PortfolioBacktest.html.asis
 e93bea073fefa46aaf5d0621b627701b *man/SP500_symbols.Rd
@@ -61,7 +61,7 @@ e8e2b95bf01408ad7a289122d3af9ce0 *tests/testthat/test-embeddedDataset.R
 4d942d56569f9f51f9cb74f7052560fc *tests/testthat/test-errorControl.R
 5e8f915f5848da3f0993a54d2c4b5076 *tests/testthat/test-plotsNtables.R
 a68f9d500b9487c7fbcb85f16593d5b4 *tests/testthat/test-portfolioBacktest.R
-bda5510bc2330ff059fbc043f159bc29 *tests/testthat/test-stockDataDownload.R
+4e58187f1adc664273be08e3bad37da5 *tests/testthat/test-stockDataDownload.R
 369e1853d736f3c20ce2d50c040b0551 *vignettes/PortfolioBacktest.html.asis
 c109fd05621807fe759ca35d8c8c0d50 *vignettes/figures/backtest-barplot.png
 b8718f8728259e3a5c2cdd5ba28af806 *vignettes/figures/backtest-boxplot.png

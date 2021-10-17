@@ -1,3 +1,9 @@
+
+## Changes in portfolioBacktest version 0.3.1 (2021-10-11)
+
+* Just a minor adjustment in the the unit tests to comply with CRAN.
+
+
 ## Changes in portfolioBacktest version 0.3.0 (2021-09-21)
 
 * In the computation of Sharpe ratio and annualized return, uncompounded returns are used (before they were compounded).
