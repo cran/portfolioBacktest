@@ -7,6 +7,7 @@
 backtestBoxPlot(
   bt,
   measure = "Sharpe ratio",
+  ref_portfolio = NULL,
   type = c("ggplot2", "simple"),
   ...
 )
@@ -18,6 +19,8 @@ backtestBoxPlot(
 \code{"Sharpe ratio"}, \code{"max drawdown"}, \code{"annual return"}, \code{"annual volatility"}, 
 \code{"Sterling ratio"}, \code{"Omega ratio"}, and \code{"ROT bps"}.
  Default is \code{"Sharpe ratio"}.}
+
+\item{ref_portfolio}{Reference portfolio (whose measure will be subtracted). Default is \code{NULL}.}
 
 \item{type}{Type of plot. Valid options: \code{"ggplot2", "simple"}. Default is 
 \code{"ggplot2"}.}
@@ -50,7 +53,7 @@ quintile_portfolio <- function(data, ...) {
 
 # do backtest
 bt <- portfolioBacktest(list("Quintile" = quintile_portfolio), dataset10,
-                        benchmark = c("uniform", "index"))
+                        benchmark = c("1/N", "index"))
 
 # now we can plot
 backtestBoxPlot(bt, "Sharpe ratio")

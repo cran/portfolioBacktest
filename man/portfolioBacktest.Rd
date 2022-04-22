@@ -9,7 +9,7 @@ portfolioBacktest(
   dataset_list,
   folder_path = NULL,
   source_to_local = TRUE,
-  price_name = "adjusted",
+  price_name = NULL,
   paral_portfolios = 1,
   paral_datasets = 1,
   show_progress_bar = FALSE,
@@ -51,8 +51,8 @@ We suggest only to allow \code{FALSE} when the code in the source files does not
 sourced, e.g., with some versions of package \code{CVXR}. In that case, we further recommend to set 
 \code{paral_portfolios > 1} to avoid changing the global environment.}
 
-\item{price_name}{Name of the \code{xts} column in each dataset that contains the prices to be used in the portfolio return 
-computation (default is \code{"adjusted"}).}
+\item{price_name}{Name of the \code{xts} object in each dataset that contains the prices to be used in the portfolio return 
+computation (default is the name of the first \code{xts} object).}
 
 \item{paral_portfolios}{Interger indicating number of portfolios to be evaluated in parallel (default is \code{1}),
 see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#parallel-backtesting}{vignette-paralle-mode} for details.}
@@ -63,7 +63,7 @@ see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/Portfol
 \item{show_progress_bar}{Logical value indicating whether to show progress bar (default is \code{FALSE}).}
 
 \item{benchmarks}{String vector indicating the benchmark portfolios to be incorporated, currently supports:
-\itemize{\item{\code{uniform} - the uniform portfolio, \eqn{w = [1/N, ..., 1/N]} with \eqn{N} be number of stocks;}
+\itemize{\item{\code{1/N} - the 1/N portfolio, \eqn{w = [1/N, ..., 1/N]} with \eqn{N} be number of stocks;}
          \item{\code{IVP} - the inverse-volatility portfolio, with weights be inversely proportional the standard deviation of returns;}
          \item{\code{index} - the market index, requires an \code{xts} named `index` in the datasets.}}}
 
@@ -98,16 +98,21 @@ If some elements are not specified then they will be automatically set to zero.}
 (default is \code{Inf}, so no time limit).}
 
 \item{return_portfolio}{Logical value indicating whether to return the portfolios (default is \code{TRUE}).
-Two portfolios are returned: \code{w_designed} is the designed portfolio at each
-given rebalancing period (using all the information up to and including that period,
-which can be executed either on the same period or the following period)
+Three portfolio series are returned: 
+\code{w_optimized} is the optimized portfolio at each given optimization period 
+(using all the information up to and including that period, which can be executed 
+either on the same period or the following period), 
+\code{w_rebalanced} is the rebalanced portfolio at each given rebalancing period,
 and \code{w_bop} is the "beginning-of-period" portfolio (i.e., at each period it contains 
 the weights held in the market in the previous period so that the portfolio return at 
 that period is just the product of the asset returns and \code{w_bop} at that period.)}
 
 \item{return_returns}{Logical value indicating whether to return the portfolio returns (default is \code{TRUE}).
-Two series are returned: \code{return} with the portfolio returns and \code{wealth}
-with the portfolio wealth (aka cumulative P&L).}
+Three series are returned: 
+\code{return} with the portfolio returns, 
+\code{wealth} with the portfolio wealth (aka cumulative P&L), and
+\code{X_lin} with the returns of the assets in the universe (note that the portfolio returns
+can also be obtained as \code{rowSums(X_lin * w_bop)} in the absence of transaction costs).}
 }
 \value{
 List with the portfolio backtest results, see 
@@ -141,17 +146,17 @@ library(portfolioBacktest)
 data(dataset10)  # load dataset
 
 # define your own portfolio function
-uniform_portfolio <- function(dataset, ...) {
+ewp_portfolio <- function(dataset, ...) {
   N <- ncol(dataset$adjusted)
   return(rep(1/N, N))
 }
 
 # do backtest
-bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+bt <- portfolioBacktest(list("EWP" = ewp_portfolio), dataset10)
 
 # check your result
 names(bt)
-backtestSelector(bt, portfolio_name = "Uniform", measures = c("Sharpe ratio", "max drawdown"))
+backtestSelector(bt, portfolio_name = "EWP", measures = c("Sharpe ratio", "max drawdown"))
 backtestTable(bt, measures = c("Sharpe ratio", "max drawdown"))
 bt_summary <- backtestSummary(bt)
 summaryTable(bt_summary)

@@ -16,7 +16,7 @@ GMVP_portfolio_fun <- function(data, ...) {
   return(w)
 }
 
-portfolios <- list("Uniform"   = portfolioBacktest:::uniform_portfolio_fun,
+portfolios <- list("Uniform"   = portfolioBacktest:::EWP_portfolio_fun,
                    "GMVP"      = GMVP_portfolio_fun)
 
 
@@ -65,13 +65,13 @@ test_that("backtest results coincide with PerformanceAnalytics and base R", {
                           return_portfolio = TRUE, 
                           return_returns = TRUE)
   ret_portfolioBacktest <- bt$Uniform$`dataset 1`$return
-  #head(bt$Uniform$`dataset 1`$w_designed)
+  #head(bt$Uniform$`dataset 1`$w_rebalanced)
   #head(bt$Uniform$`dataset 1`$w_bop)
   
   # compare with PerformanceAnalytics
-  PerfAnal <- PerformanceAnalytics::Return.portfolio(X_lin, weights = bt$Uniform$`dataset 1`$w_designed, verbose = TRUE)
+  PerfAnal <- PerformanceAnalytics::Return.portfolio(X_lin, weights = bt$Uniform$`dataset 1`$w_rebalanced, verbose = TRUE)
   expect_equivalent(ret_portfolioBacktest, PerfAnal$returns)
-  expect_equivalent(bt$Uniform$`dataset 1`$w_bop, PerfAnal$BOP.Weight)  
+  expect_equivalent(bt$Uniform$`dataset 1`$w_bop, PerfAnal$BOP.Weight)
   
 
   #
@@ -80,7 +80,7 @@ test_that("backtest results coincide with PerformanceAnalytics and base R", {
   ret_portfolioBacktest <- bt$GMVP$`dataset 1`$return
   
   # compare with PerformanceAnalytics
-  expect_warning(PerfAnal <- PerformanceAnalytics::Return.portfolio(X_lin, weights = bt$GMVP$`dataset 1`$w_designed, verbose = TRUE), 
+  expect_warning(PerfAnal <- PerformanceAnalytics::Return.portfolio(X_lin, weights = bt$GMVP$`dataset 1`$w_rebalanced, verbose = TRUE), 
                  "The weights for one or more periods do not sum up to 1: assuming a return of 0 for the residual weights")
   expect_equivalent(ret_portfolioBacktest, PerfAnal$returns)
   expect_equivalent(bt$GMVP$`dataset 1`$w_bop, PerfAnal$BOP.Weight[, 1:2])
@@ -99,10 +99,10 @@ test_that("backtest results coincide with PerformanceAnalytics and base R", {
                           execution = "next period",
                           return_portfolio = TRUE, 
                           return_returns = TRUE)
-  expect_equivalent(bt$Uniform$`dataset 1`$w_designed, bt_next_period$Uniform$`dataset 1`$w_designed)
+  expect_equivalent(bt$Uniform$`dataset 1`$w_rebalanced, bt_next_period$Uniform$`dataset 1`$w_rebalanced)
   w_designed_lagged <- prices
   w_designed_lagged[] <- NA
-  w_designed_lagged[index(bt$Uniform$`dataset 1`$w_designed), ] <- bt$Uniform$`dataset 1`$w_designed
+  w_designed_lagged[index(bt$Uniform$`dataset 1`$w_rebalanced), ] <- bt$Uniform$`dataset 1`$w_rebalanced
   w_designed_lagged <- lag.xts(w_designed_lagged)
   w_designed_lagged <- w_designed_lagged[!is.na(w_designed_lagged[, 1])]
   
@@ -118,7 +118,7 @@ test_that("backtest results and performance measures coincide with the precomput
   bt <- portfolioBacktest(portfolios, dataset_list = dataset10,
                           shortselling = TRUE, leverage = Inf, 
                           return_portfolio = TRUE, return_returns = TRUE, 
-                          benchmarks = c("uniform", "index"),
+                          benchmarks = c("1/N", "index"),
                           lookback = 252, optimize_every = 20, rebalance_every = 5)
   # bt_check <- bt$GMVP$`dataset 1`[-2]
   # save(bt_check, file = "bt_check.RData", version = 2)
@@ -157,7 +157,7 @@ test_that("backtest results with bankruptcy work fine", {
   bt <- portfolioBacktest(stock1_portfolio_fun, dataset_list = dataset10_bankruptcy,
                           shortselling = TRUE, leverage = Inf, 
                           return_portfolio = TRUE, return_returns = TRUE, 
-                          benchmark = c("uniform", "index"),
+                          benchmark = c("1/N", "index"),
                           lookback = 252, optimize_every = 20, rebalance_every = 5)
   first_date_trading <- index(bt$fun1$`dataset 1`$wealth)[1]
   stock_price_normalized <- dataset10_bankruptcy$`dataset 1`$adjusted[paste0(first_date_trading, "::"), 1]/as.numeric(dataset10_bankruptcy$`dataset 1`$adjusted[first_date_trading, 1])
@@ -194,8 +194,8 @@ test_that("transaction cost works properly", {
                            return_portfolio = TRUE, return_returns = TRUE,
                            lookback = 252, optimize_every = 20, rebalance_every = 5)
   
-  expect_equivalent(bt$Uniform$`dataset 1`[c("error", "error_message", "w_designed")], 
-                    bt_tc$Uniform$`dataset 1`[c("error", "error_message", "w_designed")])
+  expect_equivalent(bt$Uniform$`dataset 1`[c("error", "error_message", "w_rebalanced")], 
+                    bt_tc$Uniform$`dataset 1`[c("error", "error_message", "w_rebalanced")])
   expect_equivalent(bt$Uniform$`dataset 1`$w_bop,
                     bt_tc$Uniform$`dataset 1`$w_bop, tolerance = 1e-5)
   expect_equivalent(bt$Uniform$`dataset 1`$return,
@@ -222,7 +222,7 @@ test_that("cash is properly accounted in backtest results", {
   bt <- portfolioBacktest(stock1_portfolio_fun, dataset_list = dataset10_bankruptcy,
                           shortselling = TRUE, leverage = Inf, 
                           return_portfolio = TRUE, return_returns = TRUE, 
-                          benchmark = c("uniform", "index"),
+                          benchmark = c("1/N", "index"),
                           lookback = 252, optimize_every = 20, rebalance_every = 5)
   first_date_trading <- index(bt$fun1$`dataset 1`$wealth)[1]
   stock_price_normalized <- dataset10_bankruptcy$`dataset 1`$adjusted[paste0(first_date_trading, "::"), 1]/as.numeric(dataset10_bankruptcy$`dataset 1`$adjusted[first_date_trading, 1])
@@ -237,7 +237,7 @@ test_that("cash is properly accounted in backtest results", {
   bt <- suppressWarnings(expr = portfolioBacktest(stock1_portfolio_fun, dataset_list = dataset10_bankruptcy,
                                                   shortselling = TRUE, leverage = Inf, 
                                                   return_portfolio = TRUE, return_returns = TRUE, 
-                                                  benchmark = c("uniform", "index"),
+                                                  benchmark = c("1/N", "index"),
                                                   lookback = 252, optimize_every = 20, rebalance_every = 5))
   #plot(cbind(stock_price_normalized, bt$fun1$`dataset 1`$wealth), lwd = c(2, 4))
   expect_equivalent(sum(abs(bt$fun1$`dataset 1`$wealth - 1)), 0)

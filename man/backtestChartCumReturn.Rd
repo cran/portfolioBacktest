@@ -48,7 +48,7 @@ quintile_portfolio <- function(data, ...) {
 
 # do backtest
 bt <- portfolioBacktest(list("Quintile" = quintile_portfolio), dataset10,
-                        benchmark = c("uniform", "index"))
+                        benchmark = c("1/N", "index"))
 
 # now we can chart
 backtestChartCumReturn(bt)
@@ -57,7 +57,7 @@ backtestChartCumReturn(bt)
 }
 \seealso{
 \code{\link{summaryBarPlot}}, \code{\link{backtestBoxPlot}}, 
-         \code{\link{backtestChartDrawdown}}, \code{\link{backtestChartStackedBar}}
+         \code{\link{backtestChartDrawdown}}, \code{\link{backtestChartStackedBar}}, \code{\link{backtestChartSharpeRatio}}
 }
 \author{
 Daniel P. Palomar and Rui Zhou

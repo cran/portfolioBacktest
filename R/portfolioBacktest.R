@@ -35,15 +35,15 @@
 #'                        We suggest only to allow \code{FALSE} when the code in the source files does not work when locally 
 #'                        sourced, e.g., with some versions of package \code{CVXR}. In that case, we further recommend to set 
 #'                        \code{paral_portfolios > 1} to avoid changing the global environment.
-#' @param price_name Name of the \code{xts} column in each dataset that contains the prices to be used in the portfolio return 
-#'                   computation (default is \code{"adjusted"}).
+#' @param price_name Name of the \code{xts} object in each dataset that contains the prices to be used in the portfolio return 
+#'                   computation (default is the name of the first \code{xts} object).
 #' @param paral_portfolios Interger indicating number of portfolios to be evaluated in parallel (default is \code{1}),
 #'                         see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#parallel-backtesting}{vignette-paralle-mode} for details.
 #' @param paral_datasets Interger indicating number of datasets to be evaluated in parallel (default is \code{1}),
 #'                        see \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#parallel-backtesting}{vignette-paralle-mode} for details.
 #' @param show_progress_bar Logical value indicating whether to show progress bar (default is \code{FALSE}). 
 #' @param benchmarks String vector indicating the benchmark portfolios to be incorporated, currently supports:
-#' \itemize{\item{\code{uniform} - the uniform portfolio, \eqn{w = [1/N, ..., 1/N]} with \eqn{N} be number of stocks;}
+#' \itemize{\item{\code{1/N} - the 1/N portfolio, \eqn{w = [1/N, ..., 1/N]} with \eqn{N} be number of stocks;}
 #'          \item{\code{IVP} - the inverse-volatility portfolio, with weights be inversely proportional the standard deviation of returns;}
 #'          \item{\code{index} - the market index, requires an \code{xts} named `index` in the datasets.}}
 #' @param shortselling Logical value indicating whether shortselling is allowed or not 
@@ -67,15 +67,20 @@
 #' @param cpu_time_limit Time limit for executing each portfolio function over a single data set 
 #'                       (default is \code{Inf}, so no time limit).
 #' @param return_portfolio Logical value indicating whether to return the portfolios (default is \code{TRUE}).
-#'                         Two portfolios are returned: \code{w_designed} is the designed portfolio at each
-#'                         given rebalancing period (using all the information up to and including that period,
-#'                         which can be executed either on the same period or the following period)
+#'                         Three portfolio series are returned: 
+#'                         \code{w_optimized} is the optimized portfolio at each given optimization period 
+#'                         (using all the information up to and including that period, which can be executed 
+#'                         either on the same period or the following period), 
+#'                         \code{w_rebalanced} is the rebalanced portfolio at each given rebalancing period,
 #'                         and \code{w_bop} is the "beginning-of-period" portfolio (i.e., at each period it contains 
 #'                         the weights held in the market in the previous period so that the portfolio return at 
 #'                         that period is just the product of the asset returns and \code{w_bop} at that period.)
 #' @param return_returns Logical value indicating whether to return the portfolio returns (default is \code{TRUE}).
-#'                       Two series are returned: \code{return} with the portfolio returns and \code{wealth}
-#'                       with the portfolio wealth (aka cumulative P&L).
+#'                       Three series are returned: 
+#'                       \code{return} with the portfolio returns, 
+#'                       \code{wealth} with the portfolio wealth (aka cumulative P&L), and
+#'                       \code{X_lin} with the returns of the assets in the universe (note that the portfolio returns
+#'                       can also be obtained as \code{rowSums(X_lin * w_bop)} in the absence of transaction costs).
 #' 
 #' @return List with the portfolio backtest results, see 
 #'         \href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html#result-format}{vignette-result-format}
@@ -97,17 +102,17 @@
 #' data(dataset10)  # load dataset
 #' 
 #' # define your own portfolio function
-#' uniform_portfolio <- function(dataset, ...) {
+#' ewp_portfolio <- function(dataset, ...) {
 #'   N <- ncol(dataset$adjusted)
 #'   return(rep(1/N, N))
 #' }
 #' 
 #' # do backtest
-#' bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+#' bt <- portfolioBacktest(list("EWP" = ewp_portfolio), dataset10)
 #' 
 #' # check your result
 #' names(bt)
-#' backtestSelector(bt, portfolio_name = "Uniform", measures = c("Sharpe ratio", "max drawdown"))
+#' backtestSelector(bt, portfolio_name = "EWP", measures = c("Sharpe ratio", "max drawdown"))
 #' backtestTable(bt, measures = c("Sharpe ratio", "max drawdown"))
 #' bt_summary <- backtestSummary(bt)
 #' summaryTable(bt_summary)
@@ -119,7 +124,7 @@
 #' @importFrom parallel makeCluster stopCluster clusterExport clusterEvalQ
 #' @importFrom utils object.size
 #' @export
-portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path = NULL, source_to_local = TRUE, price_name = "adjusted",
+portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path = NULL, source_to_local = TRUE, price_name = NULL,
                               paral_portfolios = 1, paral_datasets = 1,
                               show_progress_bar = FALSE, benchmarks = NULL, 
                               shortselling = TRUE, leverage = Inf,
@@ -137,6 +142,10 @@ portfolioBacktest <- function(portfolio_funs = NULL, dataset_list, folder_path =
   cost <- modifyList(list(buy = 0, sell = 0, short = 0, long_leverage = 0), cost)
   if (length(cost) != 4) stop("Problem in specifying the cost: the elements can only be buy, sell, short, and long_leverage.")
   if (is.xts(dataset_list[[1]])) stop("Each element of \"dataset_list\" must be a list of xts objects. Try to surround your passed \"dataset_list\" with list().")
+  if (is.null(price_name))
+    price_name <- names(dataset_list[[1]])[1]
+  if (is.null(price_name))
+    stop("price_name incorrectly specified (or first xts object in each dataset does not have a name).")
   if (!(price_name %in% names(dataset_list[[1]]))) stop("Price data xts element \"", price_name, "\" does not exist in dataset_list.")
   if (!is.xts(dataset_list[[1]][[1]])) stop("prices have to be xts.")
   if (!is.null(T_rolling_window))
@@ -376,7 +385,7 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
   rebalance_indices <- seq(from = lookback, to = T - delay, by = rebalance_every)
   if (any(!(optimize_indices %in% rebalance_indices))) 
     stop("The reoptimization indices have to be a subset of the rebalancing indices.")
-  
+
 
   # create variables (w and cash are always normalized wrt NAV_bop)
   compute_tc <- any(cost != 0); tc <- 0
@@ -411,7 +420,7 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
               cost$long_leverage*max(0, sum(pos(w_bop[t, ])) - 1) + cost$short*sum(pos(-w_bop[t, ]))  # borrowing cost
       cash_eop_ <- 1 - sum(w_bop[t, ]) - tc
       # include period return in w
-      w_eop_ <- (1 + X[t, ])*w_bop[t, ]
+      w_eop_ <- as.numeric(1 + X[t, ])*w_bop[t, ]
       # normalize
       NAV_eop[t] <- (sum(w_eop_) + cash_eop_) * NAV_bop
       if (NAV_eop[t] <= 0) {  # if bankruptcy
@@ -428,10 +437,13 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
         # design portfolio
         data_window  <- lapply(data, function(x) x[(t-lookback+1):t, ])
         start_time <- proc.time()[3]
-        error_capture <- R.utils::withTimeout(expr = evaluate::try_capture_stack(
-          last_w_optimized <- do.call(portfolio_fun, list(data_window, w_current = w_current)), 
-          environment()),
-          timeout = cpu_time_limit, onTimeout = "silent")
+        error_capture <- R.utils::withTimeout(
+          expr = evaluate::try_capture_stack(
+            last_w_optimized <- do.call(portfolio_fun, list(data_window, w_current = w_current)), 
+            env = environment()
+            ),
+          timeout = cpu_time_limit, onTimeout = "silent"
+          )
         cpu_time <- c(cpu_time, as.numeric(proc.time()[3] - start_time))
         portf <- check_portfolio_errors(error_capture, last_w_optimized, shortselling, leverage)
         if (portf$error) 
@@ -452,7 +464,8 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
                 error_message = portf$error_message))
 
   # in case of no error, continue normally
-  w_designed <- w_designed[rebalance_indices, ]
+  w_optimized  <- w_designed[optimize_indices, ]
+  w_rebalanced <- w_designed[rebalance_indices, ]
   w_bop <- w_bop[(lookback + delay):T, ]
   delta_bop <- delta_bop[(lookback + delay):T, ]
   w_eop <- w_eop[(lookback + delay - 1):T, ]
@@ -465,9 +478,9 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
   sum_PnL_norm <- sum(returns_eop[min(1+rebalance_every, nrow(returns_eop)):nrow(returns_eop)])  # this subsetting is because the initial huge turnover was removed
   #sum_PnL_norm <- sum(returns_eop[1:(nrow(returns_eop) - rebalance_every)])
   ROT_bps <- ifelse(sum_turnover_norm != 0, 1e4*sum_PnL_norm/sum_turnover_norm, NA)
-
+  
   # # sanity check
-  # portf <- returnPortfolio(R = X, weights = w_designed, execution = execution, cost = cost)
+  # portf <- returnPortfolio(R = X, weights = w_rebalanced, execution = execution, cost = cost)
   # if (!all.equal(portf$rets, returns_eop, check.attributes = FALSE) ||
   #     !all.equal(portf$w_bop, na.omit(w_bop), check.attributes = FALSE) ||
   #     !all.equal(portf$wealth, NAV_eop, check.attributes = FALSE)) {
@@ -483,12 +496,14 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
               error = FALSE, 
               error_message = NA)    
   if (return_portfolio) {
-    res$w_designed <- w_designed
-    res$w_bop      <- w_bop
+    res$w_optimized  <- w_optimized
+    res$w_rebalanced <- w_rebalanced
+    res$w_bop        <- w_bop
   }
   if (return_returns) {
     res$return <- returns_eop
     res$wealth <- NAV_eop
+    res$X_lin <- X
   }
   return(res)
 }
@@ -507,7 +522,7 @@ singlePortfolioSingleXTSBacktest <- function(portfolio_fun, data, price_name,
 # head(returns_eop)
 # head(res_check$returns)  
 
-# bt <- portfolioBacktest(portfolioBacktest:::uniform_portfolio_fun, dataset10[1], 
+# bt <- portfolioBacktest(portfolioBacktest:::EWP_portfolio_fun, dataset10[1], 
 #                         benchmarks = c("index"))
 
 

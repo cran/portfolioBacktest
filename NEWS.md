@@ -1,3 +1,19 @@
+## Changes in portfolioBacktest version 0.4.1 (2022-04-22)
+
+* Function `summaryTable()` now allows the `kable` type of table.
+
+* Vignette now explains a temporary hack to initialize backtests (via non-recommended global variables).
+
+* Benchmark name `1/N` has replaced the previous name `uniform`.
+
+* Added function `backtestChartSharpeRatio()`.
+
+* Function `backtestBoxPlot()` now accepts a reference portfolio.
+
+* Argument `price_name` to `portfolioBacktest()` can be left unspecified.
+
+* Function `portfolioBacktest()` now returns `w_optimized` and `w_rebalanced` (instead of `w_designed`). It also returns `X_lin` that can be used for debugging or other purposes.
+
 
 ## Changes in portfolioBacktest version 0.3.1 (2021-10-11)
 

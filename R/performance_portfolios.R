@@ -25,9 +25,9 @@ portfolioPerformance <- function(rets, bars_per_year,
       #performance["Prob. Sharpe ratio"] <- sqrt(bars_per_year * PerformanceAnalytics::ProbSharpeRatio(rets, refSR = 0)$sr_prob
       performance["max drawdown"]       <- PerformanceAnalytics::maxDrawdown(rets)
       #performance["annual return"]      <- PerformanceAnalytics::Return.annualized(rets, scale = bars_per_year, geometric = FALSE) * fraction_in
-      performance["annual return"]      <- bars_per_year * mean(rets, na.rm = TRUE) * fraction_in        # prod(1 + rets)^(252/nrow(rets)) - 1 or mean(rets) * 252
+      performance["annual return"]      <- bars_per_year * fraction_in * mean(rets, na.rm = TRUE)        # prod(1 + rets)^(252/nrow(rets)) - 1 or mean(rets) * 252
       #performance["annual volatility"]  <- PerformanceAnalytics::StdDev.annualized(rets, scale = bars_per_year) * sqrt(fraction_in)  # sqrt(252) * sd(rets, na.rm = TRUE)
-      performance["annual volatility"]  <- sqrt(bars_per_year) * sd(rets, na.rm = TRUE)
+      performance["annual volatility"]  <- sqrt(bars_per_year * fraction_in) * sd(rets, na.rm = TRUE)
       performance["Sortino ratio"]      <- sqrt(bars_per_year) * PerformanceAnalytics::SortinoRatio(rets) #, MAR = mean(rets))
       performance["downside deviation"] <- sqrt(bars_per_year) * PerformanceAnalytics::DownsideDeviation(rets) #, MAR = mean(rets))  # same as SemiDeviation()
       performance["Sterling ratio"]     <- performance["annual return"] / performance["max drawdown"]
@@ -68,13 +68,13 @@ portfolioPerformance <- function(rets, bars_per_year,
 #' data(dataset10)  # load dataset
 #' 
 #' # define your own portfolio function
-#' uniform_portfolio <- function(dataset, ...) {
+#' EWP_portfolio <- function(dataset, ...) {
 #'   N <- ncol(dataset$adjusted)
 #'   return(rep(1/N, N))
 #' }
 #' 
 #' # do backtest
-#' bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+#' bt <- portfolioBacktest(list("EWP" = EWP_portfolio), dataset10)
 #' 
 #' # add a new performance measure
 #' bt <- add_performance(bt, name = "SR arithmetic", 
@@ -141,6 +141,14 @@ listPortfoliosWithFailures <- function(bt) {
   
   if (any(summary_bt_failures > 0)) {
     cat("ATTENTION: The following portfolios have failures: \n")
-    cat(rownames(summary_bt_failures)[summary_bt_failures > 0], sep = ", ")
+    cat(dQuote(rownames(summary_bt_failures)[summary_bt_failures > 0]), sep = ", ")
+    cat("\n\nIn particular, in the following backtests: \n")
+    for (i in which(summary_bt_failures > 0)) {
+      cat(paste0(dQuote(names(bt)[i]), ": "))
+      cat(which(sapply(bt[[i]], function(x) x$error)), sep = ", ")
+      cat("\n")
+    }
   }
 }
+
+

@@ -47,9 +47,8 @@ test_that("Error control test for \"portfolioBacktest\"", {
   expect_error(portfolioBacktest(list("fun1" = 1), dataset10, price_name = "lala"),
                "Price data xts element \"lala\" does not exist in dataset_list.")
   
-  names(my_dataset) <- c("open", "index")
   expect_error(portfolioBacktest(list("fun1" = 1), list(my_dataset)), 
-               "Price data xts element \"adjusted\" does not exist in dataset_list.")
+               "portfolio_fun is not a function.")
 
   expect_error(portfolioBacktest(list("fun1" = 1), list(list("adjusted" = 1))),  "prices have to be xts.")
   
@@ -86,8 +85,8 @@ test_that("Error control test for \"portfolioBacktest\"", {
 
 
 
-bt <- portfolioBacktest(portfolioBacktest:::uniform_portfolio_fun, dataset10, 
-                        benchmarks = c("uniform", "index"))
+bt <- portfolioBacktest(portfolioBacktest:::EWP_portfolio_fun, dataset10, 
+                        benchmarks = c("1/N", "index"))
 
 test_that("Error control test for \"backtestSelector\"", {
   
@@ -121,13 +120,13 @@ test_that("Error control test for \"backtestLeaderboard\"", {
 
 
 test_that("Error control test for \"genRandomFuns\"", {
-  expect_error(genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
+  expect_error(genRandomFuns(portfolio_fun = portfolioBacktest:::EWP_portfolio_fun,
                              params_grid = list(lookback = c(100, 120, 140, 160),
                                                 delay = c(0, 5, 10, 15, 20),
                                                 regularize = c(FALSE, TRUE))),
                "Number of functions to be generated \"N_funs\" has to be specified")
   
-  expect_warning(tmp <- genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
+  expect_warning(tmp <- genRandomFuns(portfolio_fun = portfolioBacktest:::EWP_portfolio_fun,
                                       params_grid = list(lookback = c(100, 120, 140, 160),
                                                          delay = c(0, 5, 10, 15, 20),
                                                          regularize = c(FALSE, TRUE)),
@@ -141,7 +140,7 @@ test_that("Error control test for \"genRandomFuns\"", {
 
 
 test_that("Error control test for \"plotPerformanceVsParams\"", {
-  portfolio_list <- genRandomFuns(portfolio_fun = portfolioBacktest:::uniform_portfolio_fun,
+  portfolio_list <- genRandomFuns(portfolio_fun = portfolioBacktest:::EWP_portfolio_fun,
                                   params_grid = list(lookback = c(100, 120, 140, 160),
                                                      delay = c(0, 5, 10, 15, 20),
                                                      regularize = c(FALSE, TRUE)),

@@ -7,8 +7,8 @@
 #'                          e.g., \code{c(1, 2)} means to summarize the performance of the first and 
 #'                          second portfolios recorded in \code{bt}.
 #' @param portfolio_names String vector of portfolio names whose performance will be summarized, 
-#'                        e.g., \code{c("Uniform", "GMVP")} means to summarize the performance of portfolios
-#'                        with names \code{"Uniform"} and \code{"GMVP"} in \code{bt} (default is 
+#'                        e.g., \code{c("EWP", "GMVP")} means to summarize the performance of portfolios
+#'                        with names \code{"EWP"} and \code{"GMVP"} in \code{bt} (default is 
 #'                        \code{names(bt)} except the benchmark names). Only considered when 
 #'                        \code{portfolio_indexes} is not passed.
 #' @param summary_fun Summary function to be employed (e.g., \code{median} or \code{mean}).
@@ -30,13 +30,13 @@
 #' data(dataset10)  # load dataset
 #' 
 #' # define your own portfolio function
-#' uniform_portfolio <- function(dataset, ...) {
+#' EWP_portfolio <- function(dataset, ...) {
 #'   N <- ncol(dataset$adjusted)
 #'   return(rep(1/N, N))
 #' }
 #' 
 #' # do backtest
-#' bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+#' bt <- portfolioBacktest(list("EWP" = EWP_portfolio), dataset10)
 #' 
 #' # show the summary
 #' bt_sum <- backtestSummary(bt)
@@ -112,13 +112,13 @@ backtestSummarySinglePortfolio <- function(res_table, portfolio_name, summary_fu
 #' data(dataset10)  # load dataset
 #' 
 #' # define your own portfolio function
-#' uniform_portfolio <- function(dataset, ...) {
+#' EWP_portfolio <- function(dataset, ...) {
 #'   N <- ncol(dataset$adjusted)
 #'   return(rep(1/N, N))
 #' }
 #' 
 #' # do backtest
-#' bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+#' bt <- portfolioBacktest(list("EWP" = EWP_portfolio), dataset10)
 #' 
 #' # show the backtest results in table
 #' bt_tab <- backtestTable(bt)
@@ -225,16 +225,16 @@ backtestTable <- function(bt, portfolio_indexes = NA, portfolio_names = NA,
 #' data("dataset10")  # load dataset
 #' 
 #' # define your own portfolio function
-#' uniform_portfolio <- function(dataset, ...) {
+#' EWP_portfolio <- function(dataset, ...) {
 #'   N <- ncol(dataset$adjusted)
 #'   return(rep(1/N, N))
 #' }
 #' 
 #' # do backtest
-#' bt <- portfolioBacktest(list("Uniform" = uniform_portfolio), dataset10)
+#' bt <- portfolioBacktest(list("EWP" = EWP_portfolio), dataset10)
 #' 
 #' # extract your interested portfolio result
-#' bt_sel <- backtestSelector(bt, portfolio_name = "Uniform")
+#' bt_sel <- backtestSelector(bt, portfolio_name = "EWP")
 #' names(bt_sel)
 #' }
 #' 
@@ -246,14 +246,14 @@ backtestSelector <- function(bt, portfolio_index = NULL, portfolio_name = NULL, 
   if (!is.null(portfolio_index)) portfolio_name <- names(bt)[portfolio_index]
   if (!is.null(bt[[portfolio_name]]$source_error_message)) return(bt[[portfolio_name]])
   performance_names <- names(bt[[portfolio_name]][[1]]$performance)
-  measures_range <- c(performance_names, 'error', 'error_message', 'cpu time', 'return', 'w_designed')
+  measures_range <- c(performance_names, 'error', 'error_message', 'cpu time', 'return', 'w_optimized', "w_rebalanced")
   if (is.null(measures)) measures <- measures_range
   if (any(!(measures %in% measures_range))) stop("\"measures\" contains invalid element.")
   if (length(measures) == 0) stop("\"measures\" must have length > 1.")
   
   
   result <- list()
-  mask_performance <- setdiff(measures, c('error', 'error_message', 'cpu time', 'return', 'w_designed'))
+  mask_performance <- setdiff(measures, c('error', 'error_message', 'cpu time', 'return', 'w_optimized', "w_rebalanced"))
   if (length(mask_performance) > 0)
     result$performance <- do.call(rbind, lapply(bt[[portfolio_name]], function(x) x$performance[mask_performance]))
   if ('error' %in% measures) 
@@ -262,8 +262,10 @@ backtestSelector <- function(bt, portfolio_index = NULL, portfolio_name = NULL, 
     result$error_message <- lapply(bt[[portfolio_name]], function(x) x$error_message)
   if ('cpu time' %in% measures)
     result$`cpu time` <- sapply(bt[[portfolio_name]], function(x) x$`cpu_time`)
-  if ('w_designed' %in% measures)
-    result$portfolio <- lapply(bt[[portfolio_name]], function(x) x$w_designed)
+  if ('w_optimized' %in% measures)
+    result$portfolio <- lapply(bt[[portfolio_name]], function(x) x$w_optimized)
+  if ('w_rebalanced' %in% measures)
+    result$portfolio <- lapply(bt[[portfolio_name]], function(x) x$w_rebalanced)
   if ('return' %in% measures) {
     result$return <- lapply(bt[[portfolio_name]], function(x) x$return)
     result$wealth <- lapply(bt[[portfolio_name]], function(x) x$wealth)
