@@ -41,9 +41,20 @@ For a quick help see the README file:
 \href{https://github.com/dppalomar/portfolioBacktest/blob/master/README.md}{GitHub-README}.
 
 For more details see the vignette:
-\href{https://CRAN.R-project.org/package=portfolioBacktest/vignettes/PortfolioBacktest.html}{CRAN-vignette}.
+\href{https://github.com/dppalomar/portfolioBacktest}{CRAN-vignette}.
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://CRAN.R-project.org/package=portfolioBacktest}
+  \item \url{https://github.com/dppalomar/portfolioBacktest}
+  \item \url{https://portfoliooptimizationbook.com}
+  \item \url{https://portfoliooptimizationbook.com/book/8-backtesting.html}
+  \item Report bugs at \url{https://github.com/dppalomar/portfolioBacktest/issues}
+}
+
+}
 \author{
 Daniel P. Palomar and Rui ZHOU
 }
